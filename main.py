@@ -1,6 +1,7 @@
 import os
 import shutil
 import PySimpleGUI as sg
+from scripts.core.recap_parser import list_groups, list_samples
 from scripts.core.tmp_manager import init_tmp_session, cleanup_tmp, init_qc_tmp, init_sashimi_tmp
 from scripts.core.qc_manager import open_qc_html
 
@@ -60,14 +61,30 @@ def main():
 
             window.metadata["current_run"] = run_id
 
+            # Lister les groupes
+            groups = list_groups(run_path)
+            window["-GROUP-"].update(values=groups)
+            window["-STATUS-"].update(f"{len(groups)} groupes trouvés", text_color="blue")
+
+            # Construire la liste globale des patients (tous groupes confondus)
+            all_samples = {}
+            for group_zip in groups:
+                samples = list_samples(run_path, group_zip)
+                for s in samples:
+                    all_samples[s] = group_zip
+
+            window.metadata["all_samples"] = all_samples
+
+            # TMP QC
             qc_tmp = init_qc_tmp(run_id)
             window.metadata["qc_tmp"] = qc_tmp
             print("QC TMP créé :", qc_tmp)
 
+            # TMP sashimi
             sashimi_tmp = init_sashimi_tmp(run_id)
             print("Sashimi TMP créé :", sashimi_tmp)
 
-            # Activer les boutons QC
+            # QC ZIP
             run_dir = os.path.dirname(run_path)
             run_base = os.path.basename(run_path).replace("_recap.zip", "")
             qc_zip = os.path.join(run_dir, f"{run_base}_qc.zip")
@@ -77,6 +94,45 @@ def main():
                 window["-QC-RAW-"].update(disabled=False)
                 window["-QC-TRIM-"].update(disabled=False)
                 window["-QC-BAM-"].update(disabled=False)
+
+        # --------------------------
+        # Sélection d’un groupe
+        # --------------------------
+        if event == "-GROUP-":
+            run_path = values["-RUN-"]
+            group_zip = values["-GROUP-"]
+
+            samples = list_samples(run_path, group_zip)
+            window["-SAMPLE-"].update(values=samples)
+
+            window["-STATUS-"].update(f"{len(samples)} patients trouvés", text_color="blue")
+
+        # --------------------------
+        # Recherche globale patient
+        # --------------------------
+        if event == "-SEARCH-":
+            query = values["-SEARCH-"].lower()
+            all_samples = window.metadata.get("all_samples", {})
+
+            # Filtrage global
+            filtered = [s for s in all_samples if query in s.lower()]
+            window["-SAMPLE-"].update(values=filtered)
+
+            # Sélection automatique si un seul match
+            if len(filtered) == 1:
+                sample = filtered[0]
+                group_zip = all_samples[sample]
+
+                # Sélectionner le groupe automatiquement
+                window["-GROUP-"].update(group_zip)
+
+                # Charger les patients du groupe
+                run_path = values["-RUN-"]
+                samples = list_samples(run_path, group_zip)
+                window["-SAMPLE-"].update(values=samples)
+
+                # Sélectionner le patient automatiquement
+                window["-SAMPLE-"].update(sample)
 
         # --------------------------
         # QC RAW
@@ -104,3 +160,4 @@ def main():
 
     window.close()
     cleanup_tmp()
+
