@@ -5,6 +5,18 @@ from scripts.core.recap_parser import list_groups, list_samples
 from scripts.core.tmp_manager import init_tmp_session, cleanup_tmp, init_qc_tmp, init_sashimi_tmp
 from scripts.core.qc_manager import open_qc_html
 
+import ctypes
+import sys
+
+def open_console():
+    # Ouvre une console Windows
+    ctypes.windll.kernel32.AllocConsole()
+    # Redirige stdout et stderr vers la console
+    sys.stdout = open("CONOUT$", "w")
+    sys.stderr = open("CONOUT$", "w")
+
+open_console()
+
 def main():
     session_tmp = init_tmp_session()
     print("TMP global créé :", session_tmp)
