@@ -173,3 +173,5 @@ def main():
     window.close()
     cleanup_tmp()
 
+if __name__ == "__main__":
+    main()
