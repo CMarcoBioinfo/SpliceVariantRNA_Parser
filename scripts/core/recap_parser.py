@@ -1,5 +1,6 @@
 import zipfile
 import io
+import math
 from python_calamine import CalamineWorkbook
 
 SHEETS = {
@@ -16,17 +17,20 @@ def format_float_sci(value):
     except:
         return value
 
-    # Cas où la notation scientifique n'est PAS utile
-    if 0.01 <= abs(f) <= 10000:
-        return f"{f:.2f}".rstrip("0").rstrip(".")
+    if f == 0:
+        return "0"
 
-    # Sinon → notation scientifique propre
-    sci = f"{f:.2e}"  # 2 décimales significatives
-    base, exp = sci.split("e")
-    exp = int(exp)
-    base = base.rstrip("0").rstrip(".")
+    # Exposant basé sur la valeur brute
+    exp = int(math.floor(math.log10(abs(f))))
 
-    return f"{base} × 10^{exp}"
+    # Mantisse brute
+    mantissa = f / (10 ** exp)
+
+    # Mantisse arrondie à 2 décimales
+    mantissa_str = f"{mantissa:.2f}".rstrip("0").rstrip(".")
+
+    return f"{mantissa_str} × 10^{exp}"
+
 
 # --------------------------
 # GROUPES
