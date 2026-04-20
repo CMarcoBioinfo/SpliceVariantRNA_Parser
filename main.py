@@ -41,8 +41,17 @@ def main():
         [sg.Text("by Corentin Marco", justification="right", font=("Helvetica", 8), text_color="gray")]
     ]
 
-    window = sg.Window("SpliceVariantRNA Parser", layout, finalize=True, enable_close_attempted_event=True)
-    window.metadata = {"current_run": None}
+    window = sg.Window(
+        "SpliceVariantRNA Parser",
+        layout,
+        finalize=True,
+        enable_close_attempted_event=True
+    )
+
+    window.metadata = {
+        "current_run": None,
+        "search_select": False,
+    }
 
     while True:
         event, values = window.read()
@@ -75,7 +84,7 @@ def main():
 
             # Lister les groupes
             groups = list_groups(run_path)
-            window["-GROUP-"].update(values=groups) 
+            window["-GROUP-"].update(values=groups)
             window["-STATUS-"].update(f"{len(groups)} groupes trouvés", text_color="blue")
 
             # Construire la liste globale des patients (tous groupes confondus)
@@ -86,6 +95,9 @@ def main():
                     all_samples[s] = group_zip
 
             window.metadata["all_samples"] = all_samples
+
+            # Afficher tous les patients au début (avant choix de groupe)
+            window["-SAMPLE-"].update(values=sorted(all_samples.keys()))
 
             # TMP QC
             qc_tmp = init_qc_tmp(run_id)
@@ -114,10 +126,10 @@ def main():
             run_path = values["-RUN-"]
             group_zip = values["-GROUP-"]
 
-            samples = list_samples(run_path, group_zip)
-            window["-SAMPLE-"].update(values=samples)
-
-            window["-STATUS-"].update(f"{len(samples)} patients trouvés", text_color="blue")
+            if run_path and group_zip:
+                samples = list_samples(run_path, group_zip)
+                window["-SAMPLE-"].update(values=samples)
+                window["-STATUS-"].update(f"{len(samples)} patients trouvés", text_color="blue")
 
         # --------------------------
         # Recherche globale patient
@@ -129,38 +141,52 @@ def main():
             filtered = [s for s in all_samples if query in s.lower()]
             window["-SAMPLE-"].update(values=filtered)
 
+            # Sélection auto si un seul résultat
             if len(filtered) == 1:
                 sample = filtered[0]
                 group_zip = all_samples[sample]
 
-                window["-GROUP-"].update(values=list_groups(values["-RUN-"]), value=group_zip)
-
-                run_path = values["-RUN-"]
-                samples = list_samples(run_path, group_zip)
-                window["-SAMPLE-"].update(values=samples)
-                window["-SAMPLE-"].update(sample)
-
-        # --------------------------
-        # Sélection manuelle d’un patient
-        # --------------------------
-        if event == "-SAMPLE-":
-            sample = values["-SAMPLE-"]
-            all_samples = window.metadata.get("all_samples", {})
-        
-            if sample in all_samples:
-                group_zip = all_samples[sample]
-        
                 # Met à jour le groupe
                 window["-GROUP-"].update(
                     values=list_groups(values["-RUN-"]),
                     value=group_zip
                 )
-        
-                # Recharge les patients du groupe
+
+                # Empêcher -SAMPLE- de réagir à cette mise à jour
+                window.metadata["search_select"] = True
+
+                # Recharge les patients du groupe et sélectionne le sample
                 run_path = values["-RUN-"]
                 samples = list_samples(run_path, group_zip)
                 window["-SAMPLE-"].update(values=samples, value=sample)
-                
+
+                window.metadata["search_select"] = False
+
+        # --------------------------
+        # Sélection manuelle d’un patient
+        # --------------------------
+        if event == "-SAMPLE-":
+            # Si la sélection vient de SEARCH (auto), on ignore
+            if window.metadata.get("search_select"):
+                continue
+
+            sample = values["-SAMPLE-"]
+            all_samples = window.metadata.get("all_samples", {})
+
+            if sample in all_samples:
+                group_zip = all_samples[sample]
+
+                # Met à jour le groupe
+                window["-GROUP-"].update(
+                    values=list_groups(values["-RUN-"]),
+                    value=group_zip
+                )
+
+                # Recharge les patients du groupe et garde le sample
+                run_path = values["-RUN-"]
+                samples = list_samples(run_path, group_zip)
+                window["-SAMPLE-"].update(values=samples, value=sample)
+
         # --------------------------
         # QC RAW
         # --------------------------
