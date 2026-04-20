@@ -162,6 +162,7 @@ def main():
         # --------------------------
         # Sélection manuelle d’un patient
         # --------------------------
+
         if event == "-SAMPLE-":
             # Si la sélection vient du SEARCH (auto), on ignore
             if window.metadata.get("search_select"):
@@ -173,7 +174,7 @@ def main():
             if sample in all_samples:
                 group_zip = all_samples[sample]
         
-                # Met à jour le groupe
+                # Met à jour le groupe (important : AVANT le reset du SEARCH)
                 window["-GROUP-"].update(
                     values=list_groups(values["-RUN-"]),
                     value=group_zip
@@ -186,7 +187,6 @@ def main():
                 run_path = values["-RUN-"]
                 samples = list_samples(run_path, group_zip)
                 window["-SAMPLE-"].update(values=samples, value=sample)
-
 
         # --------------------------
         # QC RAW
