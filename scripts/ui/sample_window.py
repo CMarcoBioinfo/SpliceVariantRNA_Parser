@@ -132,8 +132,8 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         if isinstance(event, tuple) and event[0].startswith("-TABLE-"):
             table_key, click_type, (row_idx, col_index) = event
 
-            # On ne trie que si on clique sur l'en-tête
-            if row_idx != sg.TABLE_HEADING_ROW:
+            # On ne trie que si on clique sur l'en-tête (row 0)
+            if row_idx != 0:
                 pass
             else:
                 cat = current_category
@@ -174,6 +174,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 window[table_key].update(values=new_values)
 
                 continue
+
 
 
         # --- Sélection d'une ligne ---
