@@ -10,7 +10,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
 
     sg.theme("SystemDefault")
 
-    # --- Données déjà préparées par l'orchestrator ---
+    # --- Données backend ---
     patient_id = result.patient_id
     events_by_cat = result.events_by_category
     columns_by_cat = result.columns_by_category
@@ -18,7 +18,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     sashimi_zip = result.sashimi_zip
     tmp_dir = result.tmp_dir
 
-    # --- Construction des onglets ---
+    # --- Construction des onglets (avec tableaux dedans) ---
     tabs = []
     for cat_name, events in events_by_cat.items():
         cols = columns_by_cat.get(cat_name, [])
@@ -31,7 +31,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             enable_events=True,
             expand_x=True,
             expand_y=True,
-            num_rows=12
+            num_rows=15
         )
 
         tabs.append(
@@ -46,29 +46,17 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         enable_events=True
     )
 
+    # --- Layout TRGT-like ---
     layout = [
         [tab_group],
-    
+
         [sg.Column([
-            # --- TABLEAU ---
-            [sg.Table(
-                values=[[ev.get(col, "") for col in columns_by_cat[current_category]] for ev in events_by_cat[current_category]],
-                headings=columns_by_cat[current_category],
-                key="-TABLE-",
-                auto_size_columns=True,
-                enable_events=True,
-                expand_x=True,
-                expand_y=True,
-                num_rows=15
-            )],
-    
             # --- DÉTAILS ---
             [sg.Frame(
                 f"Détails {patient_id}",
                 [[sg.Multiline(
                     "",
                     key="-DETAILS-",
-                    size=(100, 20),
                     disabled=True,
                     expand_x=True,
                     expand_y=True
@@ -76,7 +64,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 expand_x=True,
                 expand_y=True
             )],
-    
+
             # --- BOUTONS ---
             [sg.Column([
                 [
@@ -90,10 +78,9 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         ],
         expand_x=True,
         expand_y=True)],
-    
+
         [sg.Text("", key="-STATUS-", text_color="blue")]
     ]
-
 
     # --- Création fenêtre ---
     if saved_size is None:
@@ -116,7 +103,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             enable_close_attempted_event=True
         )
 
-    # Catégorie active
+    # --- Catégorie active ---
     current_category = list(events_by_cat.keys())[0] if events_by_cat else None
 
     # --- Boucle événements ---
@@ -134,22 +121,36 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         if event in (sg.WIN_CLOSED, "-CLOSE-"):
             break
 
-        # Changement d'onglet
+        # --- Changement d'onglet ---
         if event == "-TABGROUP-":
-            tab_key = values["-TABGROUP-"]
-            current_category = tab_key.replace("-TAB-", "").replace("-", "")
+            tab_key = values["-TABGROUP-"]  # ex: "-TAB-Statistical-"
+            current_category = tab_key.replace("-TAB-", "").rstrip("-")
+            window["-DETAILS-"].update("")
 
-        # Sélection d'une ligne
+        # --- Sélection d'une ligne ---
         if event.startswith("-TABLE-") and current_category:
             try:
                 idx = values[event][0]
                 ev = events_by_cat[current_category][idx]
-                details = "\n".join(f"{k}: {v}" for k, v in ev.items())
+
+                # Clés utiles uniquement
+                detail_keys = [
+                    "Gene", "Event", "Position", "Depth", "PSI-like",
+                    "Distribution", "p-value", "Significative",
+                    "nbSignificantSamples", "nbFilteredSamples",
+                    "cStart", "cEnd", "HGVS", "Source"
+                ]
+
+                details = "\n".join(
+                    f"{k}: {ev[k]}" for k in detail_keys if k in ev
+                )
+
                 window["-DETAILS-"].update(details)
+
             except Exception as e:
                 window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
 
-        # --- Boutons QC ---
+        # --- QC ---
         if event == "-QC-RAW-":
             open_qc_html(qc_zip, "fastq_raw/", window, "FASTQ Raw QC", tmp_dir)
 
