@@ -34,7 +34,7 @@ def main():
 
         [sg.Text("Patient à analyser")],
         [sg.Input(key="-SEARCH-", enable_events=True, size=(40,1))],
-        [sg.Combo([], key="-SAMPLE-", size=(40,1), readonly=True)],
+        [sg.Combo([], key="-SAMPLE-", size=(40,1), readonly=True, enable_events=True)],
 
         [sg.Button("Lancer l'analyse", key="-ANALYZE-")],
         [sg.Text("", key="-STATUS-", text_color="blue")],
@@ -48,10 +48,7 @@ def main():
         enable_close_attempted_event=True
     )
 
-    window.metadata = {
-        "current_run": None,
-        "search_select": False,
-    }
+    window.metadata = {"current_run": None, "search_select": False,}
 
     while True:
         event, values = window.read()
@@ -166,26 +163,30 @@ def main():
         # Sélection manuelle d’un patient
         # --------------------------
         if event == "-SAMPLE-":
-            # Si la sélection vient de SEARCH (auto), on ignore
+            # Si la sélection vient du SEARCH (auto), on ignore
             if window.metadata.get("search_select"):
                 continue
-
+        
             sample = values["-SAMPLE-"]
             all_samples = window.metadata.get("all_samples", {})
-
+        
             if sample in all_samples:
                 group_zip = all_samples[sample]
-
+        
                 # Met à jour le groupe
                 window["-GROUP-"].update(
                     values=list_groups(values["-RUN-"]),
                     value=group_zip
                 )
-
-                # Recharge les patients du groupe et garde le sample
+        
+                # Efface la recherche pour éviter les conflits
+                window["-SEARCH-"].update("")
+        
+                # Recharge les patients du groupe
                 run_path = values["-RUN-"]
                 samples = list_samples(run_path, group_zip)
                 window["-SAMPLE-"].update(values=samples, value=sample)
+
 
         # --------------------------
         # QC RAW
