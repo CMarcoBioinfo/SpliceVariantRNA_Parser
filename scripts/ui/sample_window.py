@@ -50,13 +50,8 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     layout = [
         [tab_group],
         [
-            sg.Frame(
-                f"Détails {patient_id}",
-                [[sg.Multiline("", key="-DETAILS-", size=(80, 15), disabled=True)]],
-                expand_x=True,
-                expand_y=True
-            )
-        ],
+            [sg.Frame("Détails", [
+                [sg.Multiline("", key="-DETAILS-", disabled=True, expand_x=True, expand_y=True)],
         [
             sg.Button("FASTQ Raw QC", key="-QC-RAW-"),
             sg.Button("FASTQ Trimmed QC", key="-QC-TRIM-"),
