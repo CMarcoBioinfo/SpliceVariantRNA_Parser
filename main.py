@@ -75,7 +75,7 @@ def main():
 
             # Lister les groupes
             groups = list_groups(run_path)
-            window["-GROUP-"].update(values=groups)  # 🔹 maintenant OK, la Combo existe
+            window["-GROUP-"].update(values=groups) 
             window["-STATUS-"].update(f"{len(groups)} groupes trouvés", text_color="blue")
 
             # Construire la liste globale des patients (tous groupes confondus)
@@ -139,6 +139,11 @@ def main():
                 samples = list_samples(run_path, group_zip)
                 window["-SAMPLE-"].update(values=samples)
                 window["-SAMPLE-"].update(sample)
+
+                print("group_zip =", repr(group_zip))
+                print("groups =", [repr(g) for g in list_groups(values["-RUN-"])])
+                print("match =", group_zip in list_groups(values["-RUN-"]))
+
 
         # --------------------------
         # QC RAW
