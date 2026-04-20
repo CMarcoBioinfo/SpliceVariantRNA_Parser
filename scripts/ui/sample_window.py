@@ -29,6 +29,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             key=f"-TABLE-{cat_name}-",
             auto_size_columns=True,
             enable_events=True,
+            enable_click_events=True,
             expand_x=True,
             expand_y=True,
             num_rows=15
@@ -127,40 +128,53 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             current_category = tab_key.replace("-TAB-", "").rstrip("-")
             window["-DETAILS-"].update("")
             
-       # --- TRI PAR COLONNE ---
+        # --- TRI PAR COLONNE ---
         if isinstance(event, tuple) and event[0].startswith("-TABLE-"):
-            table_key, col_index = event
-            cat = current_category
-    
-            ev_list = events_by_cat[cat]
-            col_name = columns_by_cat[cat][col_index]
-    
-            def is_float(x):
-                try:
-                    float(x)
-                    return True
-                except:
-                    return False
-    
-            col_values = [ev.get(col_name, "") for ev in ev_list]
-            numeric = all(is_float(v) for v in col_values if v not in ("", None))
-    
-            sort_key = f"{cat}_sort"
-            sort_state = window.metadata.get(sort_key, {})
-            reverse = sort_state.get(col_name, False)
-    
-            if numeric:
-                ev_list.sort(key=lambda ev: float(ev.get(col_name, 0)), reverse=reverse)
+            table_key, click_type, (row_idx, col_index) = event
+
+            # On ne trie que si on clique sur l'en-tête
+            if row_idx != sg.TABLE_HEADING_ROW:
+                pass
             else:
-                ev_list.sort(key=lambda ev: str(ev.get(col_name, "")).lower(), reverse=reverse)
-    
-            sort_state[col_name] = not reverse
-            window.metadata[sort_key] = sort_state
-    
-            new_values = [[ev.get(c, "") for c in columns_by_cat[cat]] for ev in ev_list]
-            window[table_key].update(values=new_values)
-    
-            continue
+                cat = current_category
+                if not cat:
+                    continue
+
+                ev_list = events_by_cat[cat]
+                col_name = columns_by_cat[cat][col_index]
+
+                # Détection du type numérique
+                def is_float(x):
+                    try:
+                        float(x)
+                        return True
+                    except:
+                        return False
+
+                col_values = [ev.get(col_name, "") for ev in ev_list]
+                numeric = all(is_float(v) for v in col_values if v not in ("", None))
+
+                # Gestion ordre croissant/décroissant
+                sort_key = f"{cat}_sort"
+                sort_state = window.metadata.get(sort_key, {})
+                reverse = sort_state.get(col_name, False)
+
+                # Tri
+                if numeric:
+                    ev_list.sort(key=lambda ev: float(ev.get(col_name, 0)), reverse=reverse)
+                else:
+                    ev_list.sort(key=lambda ev: str(ev.get(col_name, "")).lower(), reverse=reverse)
+
+                # Sauvegarde état
+                sort_state[col_name] = not reverse
+                window.metadata[sort_key] = sort_state
+
+                # Mise à jour table
+                new_values = [[ev.get(c, "") for c in columns_by_cat[cat]] for ev in ev_list]
+                window[table_key].update(values=new_values)
+
+                continue
+
 
         # --- Sélection d'une ligne ---
         if event.startswith("-TABLE-") and current_category:
