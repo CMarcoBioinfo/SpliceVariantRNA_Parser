@@ -65,7 +65,7 @@ def analyze_patient(run_path, group_zip, sample, session_tmp):
 
     # 8) Dossier sashimi correct
     run_id = run_base
-    tmp_sashimi = init_sashimi_tmp(run_id)
+    tmp_sashimi = get_sashimi_tmp()
 
     return PatientAnalysisResult(
         patient_id=sample,
