@@ -245,6 +245,8 @@ def main():
 
                 # Ouvrir la fenêtre patient
                 saved_size, saved_location = open_patient_window(result, LAST_PATIENT_SIZE, LAST_PATIENT_LOCATION)
+                print(saved_size)
+                print(saved_location)
 
                 window["-STATUS-"].update("Analyse terminée.", text_color="green")
 
