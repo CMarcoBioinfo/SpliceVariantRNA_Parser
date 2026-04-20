@@ -9,9 +9,7 @@ import ctypes
 import sys
 
 def open_console():
-    # Ouvre une console Windows
     ctypes.windll.kernel32.AllocConsole()
-    # Redirige stdout et stderr vers la console
     sys.stdout = open("CONOUT$", "w")
     sys.stderr = open("CONOUT$", "w")
 
@@ -26,6 +24,8 @@ def main():
         [sg.Input(key="-RUN-", enable_events=True), sg.FileBrowse("Parcourir")],
 
         [sg.Text("Groupe à analyser")],
+        [sg.Combo([], key="-GROUP-", size=(40,1), readonly=True, enable_events=True)],  # 🔹 AJOUT ICI
+
         [
             sg.Button("FASTQ Raw QC", key="-QC-RAW-", disabled=True),
             sg.Button("FASTQ Trimmed QC", key="-QC-TRIM-", disabled=True),
@@ -75,7 +75,7 @@ def main():
 
             # Lister les groupes
             groups = list_groups(run_path)
-            window["-GROUP-"].update(values=groups)
+            window["-GROUP-"].update(values=groups)  # 🔹 maintenant OK, la Combo existe
             window["-STATUS-"].update(f"{len(groups)} groupes trouvés", text_color="blue")
 
             # Construire la liste globale des patients (tous groupes confondus)
@@ -126,24 +126,18 @@ def main():
             query = values["-SEARCH-"].lower()
             all_samples = window.metadata.get("all_samples", {})
 
-            # Filtrage global
             filtered = [s for s in all_samples if query in s.lower()]
             window["-SAMPLE-"].update(values=filtered)
 
-            # Sélection automatique si un seul match
             if len(filtered) == 1:
                 sample = filtered[0]
                 group_zip = all_samples[sample]
 
-                # Sélectionner le groupe automatiquement
                 window["-GROUP-"].update(group_zip)
 
-                # Charger les patients du groupe
                 run_path = values["-RUN-"]
                 samples = list_samples(run_path, group_zip)
                 window["-SAMPLE-"].update(values=samples)
-
-                # Sélectionner le patient automatiquement
                 window["-SAMPLE-"].update(sample)
 
         # --------------------------
