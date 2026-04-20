@@ -46,21 +46,54 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         enable_events=True
     )
 
-    # --- Layout ---
     layout = [
         [tab_group],
-        [
-            [sg.Frame("Détails", [
-                [sg.Multiline("", key="-DETAILS-", disabled=True, expand_x=True, expand_y=True)],
-        [
-            sg.Button("FASTQ Raw QC", key="-QC-RAW-"),
-            sg.Button("FASTQ Trimmed QC", key="-QC-TRIM-"),
-            sg.Button("BAM QC", key="-QC-BAM-"),
-            sg.Button("Sashimi Plot", key="-SASHIMI-", disabled=(sashimi_zip is None)),
-            sg.Button("Fermer", key="-CLOSE-"),
+    
+        [sg.Column([
+            # --- TABLEAU ---
+            [sg.Table(
+                values=[[ev.get(col, "") for col in columns_by_cat[current_category]] for ev in events_by_cat[current_category]],
+                headings=columns_by_cat[current_category],
+                key="-TABLE-",
+                auto_size_columns=True,
+                enable_events=True,
+                expand_x=True,
+                expand_y=True,
+                num_rows=15
+            )],
+    
+            # --- DÉTAILS ---
+            [sg.Frame(
+                f"Détails {patient_id}",
+                [[sg.Multiline(
+                    "",
+                    key="-DETAILS-",
+                    size=(100, 20),
+                    disabled=True,
+                    expand_x=True,
+                    expand_y=True
+                )]],
+                expand_x=True,
+                expand_y=True
+            )],
+    
+            # --- BOUTONS ---
+            [sg.Column([
+                [
+                    sg.Button("FASTQ Raw QC", key="-QC-RAW-"),
+                    sg.Button("FASTQ Trimmed QC", key="-QC-TRIM-"),
+                    sg.Button("BAM QC", key="-QC-BAM-"),
+                    sg.Button("Sashimi Plot", key="-SASHIMI-", disabled=(sashimi_zip is None)),
+                    sg.Button("Fermer", key="-CLOSE-"),
+                ]
+            ], expand_x=True)]
         ],
+        expand_x=True,
+        expand_y=True)],
+    
         [sg.Text("", key="-STATUS-", text_color="blue")]
     ]
+
 
     # --- Création fenêtre ---
     if saved_size is None:
