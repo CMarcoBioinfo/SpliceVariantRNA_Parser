@@ -23,6 +23,8 @@ LAST_SAMPLE_LOCATION = None
 
 def main():
     global LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION
+    sg.theme("SystemDefault")
+
     session_tmp = init_tmp_session()
     print("TMP global créé :", session_tmp)
 
