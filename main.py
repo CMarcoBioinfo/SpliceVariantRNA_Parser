@@ -4,6 +4,9 @@ import PySimpleGUI as sg
 from scripts.core.recap_parser import list_groups, list_samples
 from scripts.core.tmp_manager import init_tmp_session, cleanup_tmp, init_qc_tmp, init_sashimi_tmp
 from scripts.core.qc_manager import open_qc_html
+from scripts.core.orchestrator import analyze_patient
+from scripts.ui.sample_window import open_patient_window
+
 
 import ctypes
 import sys
@@ -211,6 +214,44 @@ def main():
             qc_zip = window.metadata["qc_zip"]
             qc_tmp = window.metadata["qc_tmp"]
             open_qc_html(qc_zip, "BAM/", window, "BAM QC", qc_tmp)
+
+        # --------------------------
+        # Lancer l'analyse
+        # --------------------------
+        if event == "-ANALYZE-":
+            run_path = values["-RUN-"]
+            group_zip = values["-GROUP-"]
+            sample = values["-SAMPLE-"]
+
+            if not run_path or not group_zip or not sample:
+                window["-STATUS-"].update("Veuillez sélectionner un RUN, un groupe et un patient.", text_color="red")
+                continue
+
+            window["-STATUS-"].update("Analyse en cours...", text_color="blue")
+            window.refresh()
+
+            try:
+                # Appel backend
+                result = analyze_patient(
+                    run_path=run_path,
+                    group_zip=group_zip,
+                    sample=sample,
+                    session_tmp=session_tmp
+                )
+
+                # Ouvrir la fenêtre patient
+                saved_size, saved_location = open_patient_window(result)
+
+                # Sauvegarde optionnelle
+                window.metadata["patient_window_size"] = saved_size
+                window.metadata["patient_window_location"] = saved_location
+
+                window["-STATUS-"].update("Analyse terminée.", text_color="green")
+
+            except Exception as e:
+                window["-STATUS-"].update(f"Erreur analyse : {e}", text_color="red")
+                print("Erreur analyse :", e)
+
 
     window.close()
     cleanup_tmp()
