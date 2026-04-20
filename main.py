@@ -22,15 +22,15 @@ def main():
     layout = [
         [sg.Text("Sélection du fichier SpliceVariantRNA recap (.zip)")],
         [sg.Input(key="-RUN-", enable_events=True), sg.FileBrowse("Parcourir")],
-
-        [sg.Text("Groupe à analyser")],
-        [sg.Combo([], key="-GROUP-", size=(40,1), readonly=True, enable_events=True)],
-
+        
         [
             sg.Button("FASTQ Raw QC", key="-QC-RAW-", disabled=True),
             sg.Button("FASTQ Trimmed QC", key="-QC-TRIM-", disabled=True),
             sg.Button("BAM QC", key="-QC-BAM-", disabled=True),
         ],
+
+        [sg.Text("Groupe à analyser")],
+        [sg.Combo([], key="-GROUP-", size=(40,1), readonly=True, enable_events=True)],
 
         [sg.Text("Patient à analyser")],
         [sg.Input(key="-SEARCH-", enable_events=True, size=(40,1))],
