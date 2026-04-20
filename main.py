@@ -77,6 +77,7 @@ def main():
                 continue
 
             run_id = os.path.basename(run_path).replace("_recap.zip", "")
+            run_id = run_id.replace("_recap", "")
             print("Run sélectionné :", run_id)
 
             old_run = window.metadata["current_run"]
