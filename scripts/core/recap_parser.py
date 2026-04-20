@@ -10,6 +10,32 @@ SHEETS = {
     "Event too complex": "TooComplex",
 }
 
+def format_float_sci(value):
+    """
+    Retourne un float en notation scientifique propre :
+    - sans arrondi brutal
+    - sans décimales inutiles
+    - format 'a × 10^b'
+    """
+    try:
+        f = float(value)
+    except:
+        return value
+
+    # Si c'est un entier → pas de notation scientifique
+    if f.is_integer():
+        return str(int(f))
+
+    # Notation scientifique Python : '1.23e-05'
+    sci = f"{f:.6e}"  # 6 décimales significatives, ajustable
+    base, exp = sci.split("e")
+    exp = int(exp)
+
+    # Nettoyage du base
+    base = base.rstrip("0").rstrip(".")
+
+    return f"{base} × 10^{exp}"
+
 
 # --------------------------
 # GROUPES
@@ -107,10 +133,10 @@ def row_to_event(row, sample_file):
     if p is None:
         pvalue_fmt = "nan"
     else:
-        pvalue_fmt = f"{round(float(p), 2)} ({level})" if level else f"{round(float(p), 2)}"
+       pvalue_fmt = f"{format_float_sci(p)} ({level})" if level else format_float_sci(p)
 
     psi_raw = row.get(psi_col)
-    psi_val = round(float(psi_raw), 2) if isinstance(psi_raw, (int, float, str)) and str(psi_raw).replace('.', '').isdigit() else None
+    psi_val = format_float_sci(psi_raw) if isinstance(psi_raw, (int, float, str)) and str(psi_raw).replace('.', '').isdigit() else None
 
     return {
         "Gene": row.get("Gene"),
