@@ -133,8 +133,8 @@ def main():
                 sample = filtered[0]
                 group_zip = all_samples[sample]
 
+                window["-GROUP-"].update(values=list_groups(values["-RUN-"]))
                 window["-GROUP-"].update(group_zip)
-                event = "-GROUP-"
 
                 run_path = values["-RUN-"]
                 samples = list_samples(run_path, group_zip)
