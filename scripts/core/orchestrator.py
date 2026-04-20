@@ -1,7 +1,7 @@
 import os
 from scripts.core.models import PatientAnalysisResult
 from scripts.core.recap_parser import parse_recap, row_to_event
-from scripts.core.tmp_manager import init_sashimi_tmp
+from scripts.core.tmp_manager import get_sashimi_tmp
 
 
 COLUMNS_BY_SOURCE = {
@@ -64,8 +64,7 @@ def analyze_patient(run_path, group_zip, sample, session_tmp):
                 ev["sashimi_filename"] = None
 
     # 8) Dossier sashimi correct
-    run_id = run_base
-    tmp_sashimi = get_sashimi_tmp()
+    tmp_sashimi = get_sashimi_tmp(run_base)
 
     return PatientAnalysisResult(
         patient_id=sample,
