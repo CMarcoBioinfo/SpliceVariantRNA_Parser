@@ -129,7 +129,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             window["-DETAILS-"].update("")
             
         # --- TRI PAR COLONNE ---
-        if isinstance(event, tuple) and event[0].startswith("-TABLE-"):
+        if isinstance(event, tuple) and len(event) == 3 and event[0].startswith("-TABLE-"):
             table_key, click_type, (row_idx, col_index) = event
 
             # On ne trie que si on clique sur l'en-tête (row 0)
@@ -174,8 +174,6 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 window[table_key].update(values=new_values)
 
                 continue
-
-
 
         # --- Sélection d'une ligne ---
         if event.startswith("-TABLE-") and current_category:
