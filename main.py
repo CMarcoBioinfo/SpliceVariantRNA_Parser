@@ -76,7 +76,7 @@ def main():
                 window["-STATUS-"].update("Veuillez sélectionner un fichier ZIP valide", text_color="red")
                 continue
 
-            run_id = os.path.splitext(os.path.basename(run_path))[0]
+            run_id = os.path.basename(run_path).replace("_recap.zip", "")
             print("Run sélectionné :", run_id)
 
             old_run = window.metadata["current_run"]
