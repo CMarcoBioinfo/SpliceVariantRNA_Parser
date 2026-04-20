@@ -11,31 +11,22 @@ SHEETS = {
 }
 
 def format_float_sci(value):
-    """
-    Retourne un float en notation scientifique propre :
-    - sans arrondi brutal
-    - sans décimales inutiles
-    - format 'a × 10^b'
-    """
     try:
         f = float(value)
     except:
         return value
 
-    # Si c'est un entier → pas de notation scientifique
-    if f.is_integer():
-        return str(int(f))
+    # Cas où la notation scientifique n'est PAS utile
+    if 0.01 <= abs(f) <= 10000:
+        return f"{f:.2f}".rstrip("0").rstrip(".")
 
-    # Notation scientifique Python : '1.23e-05'
-    sci = f"{f:.6e}"  # 6 décimales significatives, ajustable
+    # Sinon → notation scientifique propre
+    sci = f"{f:.2e}"  # 2 décimales significatives
     base, exp = sci.split("e")
     exp = int(exp)
-
-    # Nettoyage du base
     base = base.rstrip("0").rstrip(".")
 
     return f"{base} × 10^{exp}"
-
 
 # --------------------------
 # GROUPES
