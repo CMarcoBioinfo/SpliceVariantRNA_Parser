@@ -24,7 +24,7 @@ def main():
         [sg.Input(key="-RUN-", enable_events=True), sg.FileBrowse("Parcourir")],
 
         [sg.Text("Groupe à analyser")],
-        [sg.Combo([], key="-GROUP-", size=(40,1), readonly=True, enable_events=True)],  # 🔹 AJOUT ICI
+        [sg.Combo([], key="-GROUP-", size=(40,1), readonly=True, enable_events=True)],
 
         [
             sg.Button("FASTQ Raw QC", key="-QC-RAW-", disabled=True),
@@ -134,6 +134,7 @@ def main():
                 group_zip = all_samples[sample]
 
                 window["-GROUP-"].update(group_zip)
+                event = "-GROUP-"
 
                 run_path = values["-RUN-"]
                 samples = list_samples(run_path, group_zip)
