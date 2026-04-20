@@ -140,11 +140,27 @@ def main():
                 window["-SAMPLE-"].update(values=samples)
                 window["-SAMPLE-"].update(sample)
 
-                print("group_zip =", repr(group_zip))
-                print("groups =", [repr(g) for g in list_groups(values["-RUN-"])])
-                print("match =", group_zip in list_groups(values["-RUN-"]))
-
-
+        # --------------------------
+        # Sélection manuelle d’un patient
+        # --------------------------
+        if event == "-SAMPLE-":
+            sample = values["-SAMPLE-"]
+            all_samples = window.metadata.get("all_samples", {})
+        
+            if sample in all_samples:
+                group_zip = all_samples[sample]
+        
+                # Met à jour le groupe
+                window["-GROUP-"].update(
+                    values=list_groups(values["-RUN-"]),
+                    value=group_zip
+                )
+        
+                # Recharge les patients du groupe
+                run_path = values["-RUN-"]
+                samples = list_samples(run_path, group_zip)
+                window["-SAMPLE-"].update(values=samples, value=sample)
+                
         # --------------------------
         # QC RAW
         # --------------------------
