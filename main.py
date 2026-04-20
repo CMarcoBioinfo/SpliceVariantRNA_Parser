@@ -18,11 +18,11 @@ def open_console():
 
 open_console()
 
-LAST_PATIENT_SIZE = None
-LAST_PATIENT_LOCATION = None
+LAST_SAMPLE_SIZE = None
+LAST_SAMPLE_LOCATION = None
 
 def main():
-    global LAST_PATIENT_SIZE, LAST_PATIENT_LOCATION
+    global LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION
     session_tmp = init_tmp_session()
     print("TMP global créé :", session_tmp)
 
@@ -244,9 +244,7 @@ def main():
                 )
 
                 # Ouvrir la fenêtre patient
-                saved_size, saved_location = open_patient_window(result, LAST_PATIENT_SIZE, LAST_PATIENT_LOCATION)
-                print(saved_size)
-                print(saved_location)
+                LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION = open_patient_window(result, LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION)
 
                 window["-STATUS-"].update("Analyse terminée.", text_color="green")
 
