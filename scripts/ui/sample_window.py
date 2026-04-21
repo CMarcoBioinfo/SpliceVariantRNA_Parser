@@ -136,52 +136,52 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             current_category = tab_key.replace("-TAB-", "").rstrip("-")
             window["-DETAILS-"].update("")
             
-        # --- TRI PAR COLONNE ---
-        if type(event) is tuple and len(event) == 3:
-            table_key, click_type, (row, col) = event
+        # # --- TRI PAR COLONNE ---
+        # if type(event) is tuple and len(event) == 3:
+        #     table_key, click_type, (row, col) = event
         
-            # On ne trie que si clic sur header
-            if row == -1:
-                cat = current_category
-                if not cat:
-                    continue
+        #     # On ne trie que si clic sur header
+        #     if row == -1:
+        #         cat = current_category
+        #         if not cat:
+        #             continue
         
-                ev_list = events_by_cat[cat]
-                col_name = columns_by_cat[cat][col]
+        #         ev_list = events_by_cat[cat]
+        #         col_name = columns_by_cat[cat][col]
         
-                # Détection numérique
-                def is_float(x):
-                    try:
-                        float(x)
-                        return True
-                    except:
-                        return False
+        #         # Détection numérique
+        #         def is_float(x):
+        #             try:
+        #                 float(x)
+        #                 return True
+        #             except:
+        #                 return False
         
-                numeric = all(is_float(ev.get(col_name, "")) for ev in ev_list if ev is not None)
+        #         numeric = all(is_float(ev.get(col_name, "")) for ev in ev_list if ev is not None)
         
-                # Gestion ordre croissant/décroissant
-                sort_key = f"{cat}_sort"
-                sort_state = window.metadata.get(sort_key, {})
-                reverse = sort_state.get(col_name, False)
+        #         # Gestion ordre croissant/décroissant
+        #         sort_key = f"{cat}_sort"
+        #         sort_state = window.metadata.get(sort_key, {})
+        #         reverse = sort_state.get(col_name, False)
         
-                # Tri
-                if numeric:
-                    ev_list.sort(key=lambda ev: float(ev.get(col_name, 0)), reverse=reverse)
-                else:
-                    ev_list.sort(key=lambda ev: str(ev.get(col_name, "")).lower(), reverse=reverse)
+        #         # Tri
+        #         if numeric:
+        #             ev_list.sort(key=lambda ev: float(ev.get(col_name, 0)), reverse=reverse)
+        #         else:
+        #             ev_list.sort(key=lambda ev: str(ev.get(col_name, "")).lower(), reverse=reverse)
         
-                # Sauvegarde état
-                sort_state[col_name] = not reverse
-                window.metadata[sort_key] = sort_state
+        #         # Sauvegarde état
+        #         sort_state[col_name] = not reverse
+        #         window.metadata[sort_key] = sort_state
         
-                # Mise à jour table
-                new_values = [[ev.get(c, "") for c in columns_by_cat[cat]] for ev in ev_list]
-                window[table_key].update(values=new_values)
+        #         # Mise à jour table
+        #         new_values = [[ev.get(c, "") for c in columns_by_cat[cat]] for ev in ev_list]
+        #         window[table_key].update(values=new_values)
         
-                continue  # IMPORTANT : empêche la sélection de s'exécuter
+        #         continue  # IMPORTANT : empêche la sélection de s'exécuter
         
-            else:
-                continue  # clic cellule → on ignore
+        #     else:
+        #         continue  # clic cellule → on ignore
 
 
         # --- Sélection d'une ligne ---
