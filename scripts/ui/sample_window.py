@@ -24,7 +24,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         cols = columns_by_cat.get(cat_name, [])
 
         table = sg.Table(
-            values=[[ev.get(col, "") for col in cols] for ev in events],
+            values=[[ev.get(col + "_fmt", ev.get(col, "")) for col in cols] for ev in events],
             headings=cols,
             key=f"-TABLE-{cat_name}-",
             auto_size_columns=True,
