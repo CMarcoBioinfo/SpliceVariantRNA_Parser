@@ -211,15 +211,10 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             except Exception as e:
                 window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
         
-        elif ( isinstance(event, tuple) and isinstance(event[0], str) and event[0].startswith("-TABLE-") and event[1] == "+CLICKED+" and isinstance(event[2], tuple) and event[2][0] == -1 and current_category):
-            table_key, click_type, (row, col) = event
+        elif ( isinstance(event, tuple) and isinstance(event[0], str) and event[0].startswith("-TABLE-") and event[1] == "+CLICKED+" and isinstance(event[2], tuple) and event[2][0] == -1 and current_category):        
+            col_name = columns_by_cat[current_category][event[2][1]]
+            ev_list = events_by_cat[current_category]
         
-            cat = current_category
-            col_name = columns_by_cat[cat][col]
-            ev_list = events_by_cat[cat]
-        
-            # Détection numérique (sur les raw values)
-            from scripts.core.utils import is_number
             numeric = all(is_number(ev.get(col_name)) for ev in ev_list)
         
             # Gestion ordre croissant/décroissant
@@ -227,7 +222,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             sort_state = window.metadata.get(sort_key, {})
             reverse = sort_state.get(col_name, False)
         
-            # TRI NUMÉRIQUE UNIQUEMENT
+            # TRI NUMÉRIQUE (PSI, p-value, Depth, nbFilteredSamples, etc.)
             if numeric:
                 ev_list.sort(
                     key=lambda ev: ev.get(col_name, float("inf")),
@@ -245,9 +240,9 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 ]
                 window[table_key].update(values=new_values)
         
-                continue  # IMPORTANT : empêche la sélection automatique
+                continue
         
-            # Si ce n'est pas numérique → on ne fait rien pour l'instant
+            # Si ce n'est pas numérique → rien pour l'instant
             pass
             
 
