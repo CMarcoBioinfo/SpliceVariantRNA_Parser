@@ -24,7 +24,7 @@ def format_float_sci(value):
     # Mantisse arrondie à 2 décimales
     mantissa_str = f"{mantissa:.2f}".rstrip("0").rstrip(".")
 
-    if exp == 0:
+    if exp == 0 or exp == 1:
         return mantissa_str
 
     return f"{mantissa_str} × 10^{exp}"
