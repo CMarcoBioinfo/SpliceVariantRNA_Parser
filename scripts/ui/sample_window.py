@@ -165,14 +165,17 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             print(numeric)
 
             if numeric:
-                sort_key = f"{current_category}_{col_name}"
-                reverse = window.metadata.get(sort_key, False)
+                # sort_key = f"{current_category}_{col_name}"
+                # reverse = window.metadata.get(sort_key, False)
+
+                ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")))
+                # new_values = [[ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[current_category]] for ev in ev_list]
             
                 # Trier
-                ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")), reverse=reverse)
+                # ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")), reverse=reverse)
             
                 # Inverser l'état pour le prochain click
-                window.metadata[sort_key] = not reverse
+                # window.metadata[sort_key] = not reverse
             
                 # Reconstruire les lignes
                 new_values = []
@@ -186,6 +189,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                     new_values.append(row)
             
                 window[event[0]].update(values=new_values)
+                
                 continue
 
                 
