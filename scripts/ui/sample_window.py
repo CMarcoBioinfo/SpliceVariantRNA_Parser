@@ -218,7 +218,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             numeric = all(is_number(ev.get(col_name)) for ev in ev_list)
         
             # Gestion ordre croissant/décroissant
-            sort_key = f"{cat}_sort"
+            sort_key = f"{current_category}_sort"
             sort_state = window.metadata.get(sort_key, {})
             reverse = sort_state.get(col_name, False)
         
@@ -235,7 +235,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         
                 # Mise à jour table (affichage formaté)
                 new_values = [
-                    [ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[cat]]
+                    [ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[current_category]]
                     for ev in ev_list
                 ]
                 window[table_key].update(values=new_values)
