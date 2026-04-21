@@ -176,17 +176,17 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 
             # Reconstruire les lignes
             new_values = []
-                for ev in ev_list:
-                    row = []
-                    for c in columns_by_cat[current_category]:
-                        if c + "_fmt" in ev:
-                            row.append(ev[c + "_fmt"])
-                        else:
-                            row.append(ev.get(c, ""))
-                    new_values.append(row)
-            
-                window[event[0]].update(values=new_values)
-                continue
+            for ev in ev_list:
+                row = []
+                for c in columns_by_cat[current_category]:
+                    if c + "_fmt" in ev:
+                        row.append(ev[c + "_fmt"])
+                    else:
+                        row.append(ev.get(c, ""))
+                new_values.append(row)
+        
+            window[event[0]].update(values=new_values)
+            continue
 
 
         # --- QC ---
