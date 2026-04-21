@@ -183,6 +183,9 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         #     else:
         #         continue  # clic cellule → on ignore
 
+        # Si c'est un clic header, on ignore la sélection
+        if type(event) is tuple:
+            continue
 
         # --- Sélection d'une ligne ---
         if isinstance(event, str) and event.startswith("-TABLE-") and current_category:
