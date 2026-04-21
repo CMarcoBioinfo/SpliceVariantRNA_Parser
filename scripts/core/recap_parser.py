@@ -126,22 +126,23 @@ def row_to_event(row, sample_file):
 
     position = f"{chrom}:{start}-{end}" if chrom and start and end and strand else None
 
+    # --- p-value ---
     p_raw = row.get("p_value")
     level = row.get("SignificanceLevel")
-    
-    if p_raw is None:
-        p_raw = None
+
+    try:
+        pvalue_raw = float(p_raw)
+    except:
+        pvalue_raw = None
+
+    if pvalue_raw is None:
         pvalue_fmt = "nan"
     else:
-        try:
-            pvalue_raw = float(p_raw)
-        except:
-            pvalue_raw = None
-        
         pvalue_fmt = format_float_sci(pvalue_raw)
         if level:
             pvalue_fmt = f"{pvalue_fmt} ({level})"
 
+    # --- PSI-like ---
     psi_raw = row.get(psi_col)
     try:
         psi_value = float(psi_raw)
@@ -155,12 +156,12 @@ def row_to_event(row, sample_file):
         "Event": row.get("event_type"),
         "Position": position,
 
-        # valeurs numériques (backend)
+        # backend
         "Depth": int(row.get(reads_col) or 0),
         "PSI-like": psi_value,
         "p-value": pvalue_raw,
 
-        # valeurs formatées (frontend)
+        # frontend
         "PSI-like_fmt": psi_fmt,
         "p-value_fmt": pvalue_fmt,
 
