@@ -1,6 +1,7 @@
 import zipfile
 import io
 import math
+from scripts.core.utils import format_float_sci
 from python_calamine import CalamineWorkbook
 
 SHEETS = {
@@ -10,30 +11,6 @@ SHEETS = {
     "No Model Junctions": "NoModel",
     "Event too complex": "TooComplex",
 }
-
-def format_float_sci(value):
-    try:
-        f = float(value)
-    except:
-        return value
-
-    if f == 0:
-        return "0"
-
-    # Exposant basé sur la valeur brute
-    exp = int(math.floor(math.log10(abs(f))))
-
-    # Mantisse brute
-    mantissa = f / (10 ** exp)
-
-    # Mantisse arrondie à 2 décimales
-    mantissa_str = f"{mantissa:.2f}".rstrip("0").rstrip(".")
-
-    if exp == 0:
-        return mantissa_str
-
-    return f"{mantissa_str} × 10^{exp}"
-
 
 # --------------------------
 # GROUPES
