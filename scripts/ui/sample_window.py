@@ -113,6 +113,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         print("EVENT =", event)
         print("TYPE =",type(event))
         print("VALUES =", values)
+        print("-----------------------------------------------------------------------------")
         # table_key, click_type, (row, col) = event
 
         # print(table_key)
