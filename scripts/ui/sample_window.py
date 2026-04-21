@@ -174,8 +174,8 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             
             sort_states[sort_key] = 1 - reverse
                 
-                # Reconstruire les lignes
-                new_values = []
+            # Reconstruire les lignes
+            new_values = []
                 for ev in ev_list:
                     row = []
                     for c in columns_by_cat[current_category]:
