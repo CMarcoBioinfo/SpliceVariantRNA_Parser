@@ -112,11 +112,11 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         event, values = window.read()
         print("EVENT =", event)
         print("VALUES =", values)
-        table_key, click_type, (row, col) = event
+        # table_key, click_type, (row, col) = event
 
-        print(table_key)
-        print(click_type)
-        print((row,col))
+        # print(table_key)
+        # print(click_type)
+        # print((row,col))
 
 
         # Sauvegarde taille/position
