@@ -115,12 +115,6 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         print("TYPE =",type(event))
         print("VALUES =", values)
         print("-----------------------------------------------------------------------------")
-        # table_key, click_type, (row, col) = event
-
-        # print(table_key)
-        # print(click_type)
-        # print((row,col))
-
 
         # Sauvegarde taille/position
         if window.TKroot is not None:
@@ -169,6 +163,14 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             print(ev_list)
             numeric = all(is_number(ev.get(col_name)) for ev in ev_list)
             print(numeric)
+
+            if numeric:
+                ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")))
+                new_values = [[ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[current_category]] for ev in ev_list]
+                window[event[0]].update(values=new_values)
+
+                continue
+                
             # # Gestion ordre croissant/décroissant
             # sort_key = f"{current_category}_sort"
             # sort_state = window.metadata.get(sort_key, {})
