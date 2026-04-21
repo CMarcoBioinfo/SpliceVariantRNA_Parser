@@ -111,6 +111,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     while True:
         event, values = window.read()
         print("EVENT =", event)
+        print("TYPE =",type(event))
         print("VALUES =", values)
         # table_key, click_type, (row, col) = event
 
