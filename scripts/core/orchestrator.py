@@ -6,7 +6,7 @@ from scripts.core.tmp_manager import get_sashimi_tmp
 
 COLUMNS_BY_SOURCE = {
     "Statistical": ["Gene", "Event", "Position", "Depth", "PSI-like", "p-value", "nbSignificantSamples"],
-    "Unique": ["Gene", "Event", "Position", "Depth", "PSI-like", "p-value", "nbFilteredSamples"],
+    "Unique": ["Gene", "Event", "Position", "Depth", "PSI-like", "nbFilteredSamples"],
     "ThresholdExceeded": ["Gene", "Event", "Position", "Depth", "nbFilteredSamples"],
     "NoModel": ["Gene", "Event", "Position", "Depth", "nbFilteredSamples"],
     "TooComplex": ["Gene", "Event", "Position", "Depth", "nbFilteredSamples"],
