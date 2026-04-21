@@ -18,6 +18,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     qc_zip = result.qc_zip
     sashimi_zip = result.sashimi_zip
     tmp_dir = result.tmp_dir
+    sort_states = {}
 
     # --- Construction des onglets (avec tableaux dedans) ---
     tabs = []
@@ -165,18 +166,13 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             print(numeric)
 
             if numeric:
-                # sort_key = f"{current_category}_{col_name}"
-                # reverse = window.metadata.get(sort_key, False)
+                sort_key = f"{current_category}_{col_name}"
+                reverse = sort_states.get(sort_key, 0)
 
-                ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")))
-                # new_values = [[ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[current_category]] for ev in ev_list]
-            
-                # Trier
-                # ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")), reverse=reverse)
-            
-                # Inverser l'état pour le prochain click
-                # window.metadata[sort_key] = not reverse
-            
+                ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")), reverse = bool(reverse))
+
+                sort_states[sort_key] = 1 - reverse
+                
                 # Reconstruire les lignes
                 new_values = []
                 for ev in ev_list:
