@@ -126,28 +126,47 @@ def row_to_event(row, sample_file):
 
     position = f"{chrom}:{start}-{end}" if chrom and start and end and strand else None
 
-    p = row.get("p_value")
+    p_raw = row.get("p_value")
     level = row.get("SignificanceLevel")
-    if p is None:
+    
+    if p_raw is None:
+        p_raw = None
         pvalue_fmt = "nan"
     else:
-       pvalue_fmt = f"{format_float_sci(p)} ({level})" if level else format_float_sci(p)
+        try:
+            pvalue_raw = float(p_raw)
+        except:
+            pvalue_raw = None
+        
+        pvalue_fmt = format_float_sci(pvalue_raw)
+        if level:
+            pvalue_fmt = f"{pvalue_fmt} ({level})"
 
     psi_raw = row.get(psi_col)
-    psi_val = format_float_sci(psi_raw) if isinstance(psi_raw, (int, float, str)) and str(psi_raw).replace('.', '').isdigit() else None
+    try:
+        psi_value = float(psi_raw)
+    except:
+        psi_value = None
+
+    psi_fmt = format_float_sci(psi_value) if psi_value is not None else None
 
     return {
         "Gene": row.get("Gene"),
         "Event": row.get("event_type"),
         "Position": position,
+
+        # valeurs numériques (backend)
         "Depth": int(row.get(reads_col) or 0),
-        "PSI-like": psi_val,
+        "PSI-like": psi_value,
+        "p-value": pvalue_raw,
+
+        # valeurs formatées (frontend)
+        "PSI-like_fmt": psi_fmt,
+        "p-value_fmt": pvalue_fmt,
 
         "Distribution": row.get("DistribAjust"),
-        "p-value": pvalue_fmt,
         "Significative": row.get("filterInterpretation") or row.get("Significative"),
         "nbSignificantSamples": int(row.get("nbSignificantSamples") or 0),
-
         "SampleReads": row.get("SampleReads"),
         "nbFilteredSamples": int(row.get("nbSampFilter") or 0),
 
