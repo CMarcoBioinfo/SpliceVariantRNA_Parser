@@ -112,6 +112,11 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         event, values = window.read()
         print("EVENT =", event)
         print("VALUES =", values)
+        table_key, click_type, (row, col) = event
+
+        print(table_key)
+        print(click_type)
+        print((row,col))
 
 
         # Sauvegarde taille/position
@@ -132,12 +137,8 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             window["-DETAILS-"].update("")
             
         # --- TRI PAR COLONNE ---
-        if isinstance(event, tuple) and len(event) == 3:
-            table_key, click_type, (row, col) = event
+        #if isinstance(event, tuple) and len(event) == 3:
 
-            print(table_key)
-            print(click_type)
-            print((row,col))
             # # On ne trie que si clic sur l'en-tête (row = -1)
             # if row != -1:
             #     continue  # <-- IGNORE les clics sur cellules
