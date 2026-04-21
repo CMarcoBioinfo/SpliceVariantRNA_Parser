@@ -1,6 +1,5 @@
 import zipfile
 import io
-import math
 from scripts.core.utils import format_float_sci
 from python_calamine import CalamineWorkbook
 
