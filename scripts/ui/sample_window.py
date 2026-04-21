@@ -191,8 +191,6 @@ def open_patient_window(result, saved_size=None, saved_location=None):
 
         # --- Sélection d'une ligne ---
         if isinstance(event, str) and event.startswith("-TABLE-") and current_category:
-            pass
-
             try:
                 idx = values[event][0]
                 ev = events_by_cat[current_category][idx]
@@ -215,6 +213,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
         
         elif ( isinstance(event, tuple) and isinstance(event[0], str) and event[0].startswith("-TABLE-") and event[1] == "+CLICKED+" and isinstance(event[2], tuple) and event[2][0] == -1 and current_category):
+            pass
             
 
 
