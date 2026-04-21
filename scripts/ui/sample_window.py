@@ -177,7 +177,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 new_values = []
                 for ev in ev_list:
                     row = []
-                    for c in columns_by_cat[currrent_category]:
+                    for c in columns_by_cat[current_category]:
                         if c + "_fmt" in ev:
                             row.append(ev[c + "_fmt"])
                         else : 
