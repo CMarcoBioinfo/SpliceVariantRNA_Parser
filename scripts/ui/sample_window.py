@@ -139,55 +139,6 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             current_category = tab_key.replace("-TAB-", "").rstrip("-")
             window["-DETAILS-"].update("")
 
-        #if isinstance(event, tuple) and event.startswith("-TABLE-") and current_category:
-        # # --- TRI PAR COLONNE ---
-        # if type(event) is tuple and len(event) == 3:
-        #     table_key, click_type, (row, col) = event
-        
-        #     # On ne trie que si clic sur header
-        #     if row == -1:
-        #         cat = current_category
-        #         if not cat:
-        #             continue
-        
-        #         ev_list = events_by_cat[cat]
-        #         col_name = columns_by_cat[cat][col]
-        
-        #         # Détection numérique
-        #         def is_float(x):
-        #             try:
-        #                 float(x)
-        #                 return True
-        #             except:
-        #                 return False
-        
-        #         numeric = all(is_float(ev.get(col_name, "")) for ev in ev_list if ev is not None)
-        
-        #         # Gestion ordre croissant/décroissant
-        #         sort_key = f"{cat}_sort"
-        #         sort_state = window.metadata.get(sort_key, {})
-        #         reverse = sort_state.get(col_name, False)
-        
-        #         # Tri
-        #         if numeric:
-        #             ev_list.sort(key=lambda ev: float(ev.get(col_name, 0)), reverse=reverse)
-        #         else:
-        #             ev_list.sort(key=lambda ev: str(ev.get(col_name, "")).lower(), reverse=reverse)
-        
-        #         # Sauvegarde état
-        #         sort_state[col_name] = not reverse
-        #         window.metadata[sort_key] = sort_state
-        
-        #         # Mise à jour table
-        #         new_values = [[ev.get(c, "") for c in columns_by_cat[cat]] for ev in ev_list]
-        #         window[table_key].update(values=new_values)
-        
-        #         continue  # IMPORTANT : empêche la sélection de s'exécuter
-        
-        #     else:
-        #         continue  # clic cellule → on ignore
-
-
         # --- Sélection d'une ligne ---
         if isinstance(event, str) and event.startswith("-TABLE-") and current_category:
             try:
@@ -214,36 +165,37 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         elif ( isinstance(event, tuple) and isinstance(event[0], str) and event[0].startswith("-TABLE-") and event[1] == "+CLICKED+" and isinstance(event[2], tuple) and event[2][0] == -1 and current_category):        
             col_name = columns_by_cat[current_category][event[2][1]]
             ev_list = events_by_cat[current_category]
-        
+            print(col_name)
+            print(ev_list)
             numeric = all(is_number(ev.get(col_name)) for ev in ev_list)
+            print(numeric)
+            # # Gestion ordre croissant/décroissant
+            # sort_key = f"{current_category}_sort"
+            # sort_state = window.metadata.get(sort_key, {})
+            # reverse = sort_state.get(col_name, False)
         
-            # Gestion ordre croissant/décroissant
-            sort_key = f"{current_category}_sort"
-            sort_state = window.metadata.get(sort_key, {})
-            reverse = sort_state.get(col_name, False)
+            # # TRI NUMÉRIQUE (PSI, p-value, Depth, nbFilteredSamples, etc.)
+            # if numeric:
+            #     ev_list.sort(
+            #         key=lambda ev: ev.get(col_name, float("inf")),
+            #         reverse=reverse
+            #     )
         
-            # TRI NUMÉRIQUE (PSI, p-value, Depth, nbFilteredSamples, etc.)
-            if numeric:
-                ev_list.sort(
-                    key=lambda ev: ev.get(col_name, float("inf")),
-                    reverse=reverse
-                )
+            #     # Sauvegarde état
+            #     sort_state[col_name] = not reverse
+            #     window.metadata[sort_key] = sort_state
         
-                # Sauvegarde état
-                sort_state[col_name] = not reverse
-                window.metadata[sort_key] = sort_state
+            #     # Mise à jour table (affichage formaté)
+            #     new_values = [
+            #         [ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[current_category]]
+            #         for ev in ev_list
+            #     ]
+            #     window[table_key].update(values=new_values)
         
-                # Mise à jour table (affichage formaté)
-                new_values = [
-                    [ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[current_category]]
-                    for ev in ev_list
-                ]
-                window[table_key].update(values=new_values)
+            #     continue
         
-                continue
-        
-            # Si ce n'est pas numérique → rien pour l'instant
-            pass
+            # # Si ce n'est pas numérique → rien pour l'instant
+            # pass
             
 
 
