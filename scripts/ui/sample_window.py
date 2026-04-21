@@ -164,14 +164,15 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             print(ev_list)
             numeric = all(is_number(ev.get(col_name)) for ev in ev_list)
             print(numeric)
-
+            sort_key = f"{current_category}_{col_name}"
+            reverse = sort_states.get(sort_key, 0)
+            
             if numeric:
-                sort_key = f"{current_category}_{col_name}"
-                reverse = sort_states.get(sort_key, 0)
-
                 ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")), reverse = bool(reverse))
-
-                sort_states[sort_key] = 1 - reverse
+            else:
+                ev_list.sort(key=lambda ev: str(ev.get(col_name, "")).lower(), reverse = bool(reverse))
+            
+            sort_states[sort_key] = 1 - reverse
                 
                 # Reconstruire les lignes
                 new_values = []
@@ -185,38 +186,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                     new_values.append(row)
             
                 window[event[0]].update(values=new_values)
-                
                 continue
-
-                
-            # # Gestion ordre croissant/décroissant
-            # sort_key = f"{current_category}_sort"
-            # sort_state = window.metadata.get(sort_key, {})
-            # reverse = sort_state.get(col_name, False)
-        
-            # # TRI NUMÉRIQUE (PSI, p-value, Depth, nbFilteredSamples, etc.)
-            # if numeric:
-            #     ev_list.sort(
-            #         key=lambda ev: ev.get(col_name, float("inf")),
-            #         reverse=reverse
-            #     )
-        
-            #     # Sauvegarde état
-            #     sort_state[col_name] = not reverse
-            #     window.metadata[sort_key] = sort_state
-        
-            #     # Mise à jour table (affichage formaté)
-            #     new_values = [
-            #         [ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[current_category]]
-            #         for ev in ev_list
-            #     ]
-            #     window[table_key].update(values=new_values)
-        
-            #     continue
-        
-            # # Si ce n'est pas numérique → rien pour l'instant
-            # pass
-            
 
 
         # --- QC ---
