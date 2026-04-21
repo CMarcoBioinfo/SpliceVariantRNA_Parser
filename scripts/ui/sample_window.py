@@ -137,7 +137,15 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         # --- Sélection d'une ligne ---
         if isinstance(event, str) and event.startswith("-TABLE-") and current_category:
             try:
+                selected = values[event]
+                if not selected:
+                    continue
+
                 idx = values[event][0]
+
+                if idx < 0 or idx >= len(events_by_cat[current_category]):
+                    continue
+                
                 ev = events_by_cat[current_category][idx]
 
                 # Clés utiles uniquement
