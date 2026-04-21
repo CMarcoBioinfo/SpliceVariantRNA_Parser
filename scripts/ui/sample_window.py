@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 from scripts.core.qc_manager import open_qc_html
 from scripts.core.sashimi_manager import open_sashimi_plot
+from scripts.core.utils import is_number
 
 
 def open_patient_window(result, saved_size=None, saved_location=None):
@@ -135,9 +136,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         # --- Changement d'onglet ---
         if event == "-TABGROUP-":
             tab_key = values["-TABGROUP-"]  # ex: "-TAB-Statistical-"
-            print(tab_key)
             current_category = tab_key.replace("-TAB-", "").rstrip("-")
-            print(current_category)
             window["-DETAILS-"].update("")
 
         #if isinstance(event, tuple) and event.startswith("-TABLE-") and current_category:
@@ -213,7 +212,42 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
         
         elif ( isinstance(event, tuple) and isinstance(event[0], str) and event[0].startswith("-TABLE-") and event[1] == "+CLICKED+" and isinstance(event[2], tuple) and event[2][0] == -1 and current_category):
-            print(values[0])
+            table_key, click_type, (row, col) = event
+        
+            cat = current_category
+            col_name = columns_by_cat[cat][col]
+            ev_list = events_by_cat[cat]
+        
+            # Détection numérique (sur les raw values)
+            from scripts.core.utils import is_number
+            numeric = all(is_number(ev.get(col_name)) for ev in ev_list)
+        
+            # Gestion ordre croissant/décroissant
+            sort_key = f"{cat}_sort"
+            sort_state = window.metadata.get(sort_key, {})
+            reverse = sort_state.get(col_name, False)
+        
+            # TRI NUMÉRIQUE UNIQUEMENT
+            if numeric:
+                ev_list.sort(
+                    key=lambda ev: ev.get(col_name, float("inf")),
+                    reverse=reverse
+                )
+        
+                # Sauvegarde état
+                sort_state[col_name] = not reverse
+                window.metadata[sort_key] = sort_state
+        
+                # Mise à jour table (affichage formaté)
+                new_values = [
+                    [ev.get(c + "_fmt", ev.get(c, "")) for c in columns_by_cat[cat]]
+                    for ev in ev_list
+                ]
+                window[table_key].update(values=new_values)
+        
+                continue  # IMPORTANT : empêche la sélection automatique
+        
+            # Si ce n'est pas numérique → on ne fait rien pour l'instant
             pass
             
 
