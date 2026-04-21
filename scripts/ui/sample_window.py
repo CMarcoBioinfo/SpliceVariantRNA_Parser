@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 from scripts.core.qc_manager import open_qc_html
 from scripts.core.sashimi_manager import open_sashimi_plot
-from scripts.core.utils import is_number
+from scripts.core.utils import is_number, parse_position
 
 
 def open_patient_window(result, saved_size=None, saved_location=None):
@@ -166,9 +166,16 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             print(numeric)
             sort_key = f"{current_category}_{col_name}"
             reverse = sort_states.get(sort_key, 0)
-            
+
+            # --- Tri numérique ---
             if numeric:
                 ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")), reverse = bool(reverse))
+
+            # --- Tri position ---
+            elif col_name.lower() == "position":
+                ev_list.sort(key=lambda ev: parse_position(ev.get(col_name, "")), reverse=bool(reverse))
+
+            # --- Tri texte ---
             else:
                 ev_list.sort(key=lambda ev: str(ev.get(col_name, "")).lower(), reverse = bool(reverse))
             
