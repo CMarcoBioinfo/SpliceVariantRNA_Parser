@@ -134,9 +134,12 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         # --- Changement d'onglet ---
         if event == "-TABGROUP-":
             tab_key = values["-TABGROUP-"]  # ex: "-TAB-Statistical-"
+            print(tab_key)
             current_category = tab_key.replace("-TAB-", "").rstrip("-")
+            print(current_category)
             window["-DETAILS-"].update("")
-            
+
+        #if isinstance(event, tuple) and event.startswith("-TABLE-") and current_category:
         # # --- TRI PAR COLONNE ---
         # if type(event) is tuple and len(event) == 3:
         #     table_key, click_type, (row, col) = event
