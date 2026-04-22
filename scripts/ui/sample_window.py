@@ -28,7 +28,6 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     # CONSTRUCTION DES TABS
     # -------------------------------------------------------------------------
 
-    # --- Construction des onglets (avec tableaux dedans) ---
     tabs = []
     for cat_name in events_by_cat:
         table = sg.Table(
@@ -113,14 +112,21 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             tab_key = values["-TABGROUP-"]
             current_category = tab_key.replace("-TAB-", "").rstrip("-")
             window["-DETAILS-"].update("")
+            continue
 
         # --- Sélection d'une ligne ---
-        if isinstance(event, str) and event.startswith("-TABLE-") and current_category:
-            selected = values[event]
+        if (
+            isinstance(event, str)
+            and event.startswith("-TABLE-")
+            and event not in ("-QC-RAW-", "-QC-TRIM-", "-QC-BAM-", "-SASHIMI-", "-CLOSE-")
+            and current_category
+        ):
+            selected = values.get(event)
             if selected:
                 idx = selected[0]
                 details = manager.extract_details(current_category, idx)
                 window["-DETAILS-"].update(details)
+            continue
 
         # --- Tri ---
         if (
@@ -140,21 +146,32 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         # --- QC ---
         if event == "-QC-RAW-":
             open_qc_html(qc_zip, "fastq_raw/", window, "FASTQ Raw QC", tmp_dir)
+            continue
 
         if event == "-QC-TRIM-":
             open_qc_html(qc_zip, "fastq_trimmed/", window, "FASTQ Trimmed QC", tmp_dir)
+            continue
 
         if event == "-QC-BAM-":
             open_qc_html(qc_zip, "BAM/", window, "BAM QC", tmp_dir)
+            continue
 
         # --- Sashimi ---
         if event == "-SASHIMI-" and current_category:
             try:
-                idx = values[f"-TABLE-{current_category}-"][0]
+                selected = values.get(f"-TABLE-{current_category}-")
+                if not selected:
+                    window["-STATUS-"].update("Aucun événement sélectionné", text_color="red")
+                    continue
+
+                idx = selected[0]
                 ev = events_by_cat[current_category][idx]
                 open_sashimi_plot(sashimi_zip, ev, window, tmp_dir)
+
             except Exception as e:
                 window["-STATUS-"].update(f"Erreur sashimi : {e}", text_color="red")
+            continue
 
     window.close()
     return saved_size, saved_location
+
