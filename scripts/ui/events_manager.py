@@ -8,8 +8,6 @@ class EventsManager:
         cols = self.columns_by_cat.get(category) or []
 
         return [
-            [ev.get(col + "_fmt", ev.get(col, ""))) for col in cols]
+            [ev.get(col + "_fmt", ev.get(col, "")) for col in cols]
             for ev in evs
         ]
-
-
