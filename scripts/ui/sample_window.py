@@ -1,7 +1,6 @@
 import PySimpleGUI as sg
 from scripts.core.qc_manager import open_qc_html
 from scripts.core.sashimi_manager import open_sashimi_plot
-from scripts.core.utils import is_number, parse_position
 from scripts.ui.events_manager import EventsManager
 
 
@@ -41,13 +40,14 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         )
 
         # ---------------------------------------------------------
-        # AJOUT FILTRES : ligne simple de filtres sous la table
+        # AJOUT FILTRES : ligne simple SOUS LE HEADER
         # ---------------------------------------------------------
         filter_row = [
             sg.Input(
                 key=f"-FILTER-{cat_name}-{col}-",
                 size=(12, 1),
-                enable_events=True
+                enable_events=True,
+                justification="left"
             )
             for col in cols
         ]
@@ -55,9 +55,8 @@ def open_patient_window(result, saved_size=None, saved_location=None):
 
         tabs.append(
             sg.Tab(cat_name, [
-                [table],
-                [sg.Text("Filtres :")],
-                filter_row
+                [table],        # tableau (header inclus)
+                filter_row      # 🔥 ligne de filtres juste en dessous
             ], key=f"-TAB-{cat_name}-")
         )
 
@@ -130,11 +129,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     # --- Boucle événements ---
     while True:
         event, values = window.read()
-        print("EVENT =", event)
-        print("VALUES =", values)
-        print("-----------------------------------------------------------------------------")
 
-        # Sauvegarde taille/position
         if window.TKroot is not None:
             try:
                 saved_size = window.size
