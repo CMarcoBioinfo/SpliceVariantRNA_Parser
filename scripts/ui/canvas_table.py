@@ -1,58 +1,93 @@
-# scripts/ui/canvas_table.py
+import PySimpleGUI as sg
+
 
 class CanvasTable:
-    def __init__(self, canvas, columns, data):
+    def __init__(self, canvas, columns, data, row_height=25, col_width=150):
         self.canvas = canvas
         self.columns = columns
         self.data = data
 
-        # Dimensions
-        self.col_width = 150
-        self.row_height = 25
+        self.row_height = row_height
+        self.col_width = col_width
 
-    # --- Dessin complet ---
+        self.selected_row = None
+        self.scroll_offset = 0
+
+        # Bind scroll + click
+        self.canvas.bind("<Button-1>", self._on_click)
+        self.canvas.bind("<MouseWheel>", self._on_scroll)
+
+    # -----------------------------
+    # PUBLIC API
+    # -----------------------------
+    def update_data(self, new_data):
+        self.data = new_data
+        self.draw()
+
+    def get_selected_index(self):
+        return self.selected_row
+
+    # -----------------------------
+    # DRAWING
+    # -----------------------------
     def draw(self):
-        self.canvas.delete("all")
-        self.draw_header()
-        self.draw_filters()
-        self.draw_rows()
+        c = self.canvas
+        c.delete("all")
 
-    # --- Header ligne 1 ---
-    def draw_header(self):
+        self._draw_header()
+        self._draw_rows()
+
+    def _draw_header(self):
+        c = self.canvas
+        y = 0
+
         for i, col in enumerate(self.columns):
             x = i * self.col_width
-            self.canvas.create_rectangle(
-                x, 0, x + self.col_width, self.row_height,
-                fill="#E0E0E0"
-            )
-            self.canvas.create_text(
-                x + 5, 12, anchor="w", text=col
-            )
+            c.create_rectangle(x, y, x + self.col_width, y + self.row_height,
+                               fill="#E0E0E0", outline="black")
+            c.create_text(x + 5, y + self.row_height // 2,
+                          anchor="w", text=col)
 
-    # --- Header ligne 2 (filtres) ---
-    def draw_filters(self):
-        y = self.row_height
-        for i, col in enumerate(self.columns):
-            x = i * self.col_width
-            self.canvas.create_rectangle(
-                x, y, x + self.col_width, y + self.row_height,
-                fill="#F0F0F0"
-            )
-            self.canvas.create_text(
-                x + 5, y + 12, anchor="w", text="[ filtre ]"
-            )
+    def _draw_rows(self):
+        c = self.canvas
+        start_y = self.row_height
 
-    # --- Lignes ---
-    def draw_rows(self):
-        start_y = self.row_height * 2
-        for r, row in enumerate(self.data):
+        visible_data = self.data[self.scroll_offset:]
+
+        for r, row in enumerate(visible_data):
             y = start_y + r * self.row_height
+
             for i, col in enumerate(self.columns):
                 x = i * self.col_width
-                self.canvas.create_rectangle(
-                    x, y, x + self.col_width, y + self.row_height,
-                    fill="white"
-                )
-                self.canvas.create_text(
-                    x + 5, y + 12, anchor="w", text=str(row[i])
-                )
+
+                fill = "#CCE5FF" if r + self.scroll_offset == self.selected_row else "white"
+
+                c.create_rectangle(x, y, x + self.col_width, y + self.row_height,
+                                   fill=fill, outline="black")
+                c.create_text(x + 5, y + self.row_height // 2,
+                              anchor="w", text=str(row[i]))
+
+    # -----------------------------
+    # EVENTS
+    # -----------------------------
+    def _on_click(self, event):
+        y = event.y
+
+        # Ignore header
+        if y < self.row_height:
+            return
+
+        row_index = (y - self.row_height) // self.row_height
+        row_index += self.scroll_offset
+
+        if 0 <= row_index < len(self.data):
+            self.selected_row = row_index
+            self.draw()
+
+    def _on_scroll(self, event):
+        if event.delta < 0:
+            self.scroll_offset = min(self.scroll_offset + 1, max(0, len(self.data) - 1))
+        else:
+            self.scroll_offset = max(self.scroll_offset - 1, 0)
+
+        self.draw()
