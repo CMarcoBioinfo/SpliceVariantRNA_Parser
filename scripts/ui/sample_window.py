@@ -40,23 +40,34 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         )
 
         # ---------------------------------------------------------
-        # AJOUT FILTRES : ligne simple SOUS LE HEADER
+        # AJOUT FAUX HEADER FILTRES (aligné sous le vrai header)
         # ---------------------------------------------------------
-        filter_row = [
+        filter_inputs = [
             sg.Input(
                 key=f"-FILTER-{cat_name}-{col}-",
                 size=(12, 1),
                 enable_events=True,
-                justification="left"
+                justification="left",
+                border_width=0,
+                pad=(0, 0)
             )
             for col in cols
         ]
+
+        fake_header = sg.Frame(
+            "",
+            [[*filter_inputs]],
+            relief=sg.RELIEF_FLAT,
+            border_width=0,
+            pad=(0, 0),
+            expand_x=True
+        )
         # ---------------------------------------------------------
 
         tabs.append(
             sg.Tab(cat_name, [
-                [table],        # tableau (header inclus)
-                filter_row      # 🔥 ligne de filtres juste en dessous
+                [table],
+                [fake_header]   # 🔥 juste sous le header
             ], key=f"-TAB-{cat_name}-")
         )
 
@@ -165,7 +176,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
 
         # ---------------------------------------------------------
-        # AJOUT FILTRES : gestion des champs de filtre
+        # AJOUT FAUX HEADER FILTRES : gestion des champs
         # ---------------------------------------------------------
         if isinstance(event, str) and event.startswith("-FILTER-"):
             # event = "-FILTER-cat-col-"
