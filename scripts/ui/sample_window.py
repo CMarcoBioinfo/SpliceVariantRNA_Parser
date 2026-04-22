@@ -3,6 +3,7 @@ from scripts.core.qc_manager import open_qc_html
 from scripts.core.sashimi_manager import open_sashimi_plot
 from scripts.ui.events_manager import EventsManager
 
+
 def open_patient_window(result, saved_size=None, saved_location=None):
     """
     Fenêtre d'affichage des événements RNA pour un patient.
@@ -27,14 +28,14 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     # -------------------------------------------------------------------------
     # CONSTRUCTION DES TABS
     # -------------------------------------------------------------------------
-    
+
     tabs = []
-    
+
     for cat_name in events_by_cat:
-    
+
         cols = columns_by_cat.get(cat_name) or []
-        vals = manager.build_table_values(cat_name) or []
-    
+        vals = manager.build_table_values(cat_name)  # toujours une liste
+
         table = sg.Table(
             values=vals,
             headings=cols,
@@ -46,7 +47,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             expand_y=True,
             num_rows=15
         )
-    
+
         tabs.append(sg.Tab(cat_name, [[table]], key=f"-TAB-{cat_name}-"))
 
     tab_group = sg.TabGroup(
@@ -124,7 +125,6 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         if (
             isinstance(event, str)
             and event.startswith("-TABLE-")
-            and event not in ("-QC-RAW-", "-QC-TRIM-", "-QC-BAM-", "-SASHIMI-", "-CLOSE-")
             and current_category
         ):
             selected = values.get(event)
@@ -180,4 +180,3 @@ def open_patient_window(result, saved_size=None, saved_location=None):
 
     window.close()
     return saved_size, saved_location
-
