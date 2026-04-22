@@ -4,7 +4,8 @@ class EventsManager:
     def __init__(self, events_by_cat, columns_by_cat):
         self.events_by_cat = events_by_cat
         self.columns_by_cat = columns_by_cat
-        self.sort_states = {}   # 🔥 indispensable pour le toggle de tri
+        self.sort_states = {}
+        self.filters = {}
 
     def build_table_values(self, category):
         evs = self.events_by_cat.get(category) or []
@@ -43,7 +44,7 @@ class EventsManager:
         col_name = cols[col_index]
     
         # Liste des événements à trier
-        ev_list = self.events_by_cat.get(category) or []
+        ev_list = self.apply_filters(category)
     
         # Détection du type de tri
         numeric = all(is_number(ev.get(col_name)) for ev in ev_list)
@@ -78,4 +79,78 @@ class EventsManager:
     
         # Reconstruction des lignes (ÉTAPE 1)
         return self.build_table_values(category)
+
+    def add_filter(self, category, col_name, value, mode="AND"):
+        if not value:
+            return
+
+        cat_filters = self.filters.setdefault(category, {})
+        col_filters = cat_filters.setdefault(col_name, [])
+
+        col_filters.append({"value": value, "mode": mode})
+
+    def clear_filters(self, category, col_name=None):
+        if category not in self.filters:
+            return
+
+        if col_name is None:
+            # on efface tous les filtres de la catégorie
+            self.filters[category] = {}
+        else:
+            self.filters[category].pop(col_name, None)
+
+    def get_filters(self, category):
+        return self.filters.get(category, {})
+
+    def apply_filters(self, category):
+        """
+        Version avancée :
+        - plusieurs filtres par colonne
+        - AND/OR entre filtres d'une même colonne
+        - AND global entre colonnes
+        """
+        evs = self.events_by_cat.get(category) or []
+        cat_filters = self.filters.get(category, {})
+
+        if not cat_filters:
+            return evs
+
+        filtered = []
+
+        for ev in evs:
+            keep_event = True
+
+            # AND global entre colonnes
+            for col_name, filters in cat_filters.items():
+                if not filters:
+                    continue
+
+                ev_val = str(ev.get(col_name, "")).lower()
+
+                # Évalue les filtres de cette colonne
+                col_keep = None
+
+                for f in filters:
+                    value = f["value"].lower()
+                    mode = f["mode"]
+
+                    match = value in ev_val
+
+                    if col_keep is None:
+                        col_keep = match
+                    else:
+                        if mode == "AND":
+                            col_keep = col_keep and match
+                        else:  # OR
+                            col_keep = col_keep or match
+
+                # Si une colonne échoue → l'événement est rejeté
+                if not col_keep:
+                    keep_event = False
+                    break
+
+            if keep_event:
+                filtered.append(ev)
+
+        return filtered
 
