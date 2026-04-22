@@ -17,13 +17,11 @@ class EventsManager:
     # RECONSTRUCTION DES LIGNES
     # ------------------------------------------------------------------
     def build_table_values(self, category):
-        evs = self.events_by_cat.get(category)
-        if not evs:
-            return []
+        # Toujours une liste, jamais None
+        evs = self.events_by_cat.get(category) or []
+        cols = self.columns_by_cat.get(category) or []
     
-        cols = self.columns_by_cat.get(category, [])
         values = []
-    
         for ev in evs:
             row = []
             for col in cols:
@@ -31,7 +29,6 @@ class EventsManager:
             values.append(row)
     
         return values
-
 
     # ------------------------------------------------------------------
     # TRI
