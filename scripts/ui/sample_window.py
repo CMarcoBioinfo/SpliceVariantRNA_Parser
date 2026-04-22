@@ -5,9 +5,6 @@ from scripts.ui.events_manager import EventsManager
 
 
 def open_patient_window(result, saved_size=None, saved_location=None):
-    """
-    Fenêtre d'affichage des événements RNA pour un patient.
-    """
 
     sg.theme("SystemDefault")
 
@@ -22,7 +19,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     # --- Gestionnaire externe ---
     manager = EventsManager(events_by_cat, columns_by_cat)
 
-    # --- Construction des onglets (avec tableaux dedans) ---
+    # --- Construction des onglets ---
     tabs = []
     for cat_name in events_by_cat.keys():
         cols = columns_by_cat.get(cat_name, []) or []
@@ -40,9 +37,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             num_rows=15
         )
 
-        tabs.append(
-            sg.Tab(cat_name, [[table]], key=f"-TAB-{cat_name}-")
-        )
+        tabs.append(sg.Tab(cat_name, [[table]], key=f"-TAB-{cat_name}-"))
 
     tab_group = sg.TabGroup(
         [tabs],
@@ -52,20 +47,14 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         enable_events=True
     )
 
-    # --- Layout TRGT-like ---
+    # --- Layout ---
     layout = [
         [tab_group],
 
         [sg.Column([
             [sg.Frame(
                 f"Détails {patient_id}",
-                [[sg.Multiline(
-                    "",
-                    key="-DETAILS-",
-                    disabled=True,
-                    expand_x=True,
-                    expand_y=True
-                )]],
+                [[sg.Multiline("", key="-DETAILS-", disabled=True, expand_x=True, expand_y=True)]],
                 expand_x=True,
                 expand_y=True
             )],
@@ -79,9 +68,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                     sg.Button("Fermer", key="-CLOSE-"),
                 ]
             ], expand_x=True)]
-        ],
-        expand_x=True,
-        expand_y=True)],
+        ], expand_x=True, expand_y=True)],
 
         [sg.Text("", key="-STATUS-", text_color="blue")]
     ]
@@ -126,11 +113,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             continue
 
         # --- Sélection d'une ligne ---
-        if (
-            isinstance(event, str)
-            and event.startswith("-TABLE-")
-            and current_category
-        ):
+        if isinstance(event, str) and event.startswith("-TABLE-") and current_category:
             selected = values.get(event)
             if selected:
                 idx = selected[0]
@@ -138,17 +121,14 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 window["-DETAILS-"].update(details)
             continue
 
-        # --- TRI (ÉTAPE 2 : externalisé dans EventsManager) ---
-        if (
-            isinstance(event, tuple)
-            and isinstance(event[0], str)
-            and event[0].startswith("-TABLE-")
-            and event[1] == "+CLICKED+"
-            and isinstance(event[2], tuple)
-            and event[2][0] == -1
-            and current_category
-        ):
+        # --- TRI (ton filtre robuste + tri EventsManager) ---
+        elif (isinstance(event, tuple) and isinstance(event[0], str) and event[0].startswith("-TABLE-") and event[1] == "+CLICKED+" and isinstance(event[2], tuple) and event[2][0] == -1 and current_category):
+            # sécurisation
+            if len(event[2]) < 2 or event[2][1] is None:
+                continue
+
             col_index = event[2][1]
+
             new_values = manager.sort_category(current_category, col_index)
             window[event[0]].update(values=new_values)
             continue
@@ -190,3 +170,4 @@ def open_patient_window(result, saved_size=None, saved_location=None):
 
     window.close()
     return saved_size, saved_location
+
