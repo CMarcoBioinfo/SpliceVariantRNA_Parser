@@ -34,7 +34,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     for cat_name in events_by_cat:
 
         cols = columns_by_cat.get(cat_name) or []
-        vals = manager.build_table_values(cat_name)  # toujours une liste
+        vals = manager.build_table_values(cat_name)
 
         table = sg.Table(
             values=vals,
@@ -144,7 +144,11 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             and event[2][0] == -1
             and current_category
         ):
-            col_name = columns_by_cat[current_category][event[2][1]]
+            cols = columns_by_cat.get(current_category) or []
+            if not cols:
+                continue
+
+            col_name = cols[event[2][1]]
             new_values = manager.sort_category(current_category, col_name)
             window[event[0]].update(values=new_values)
             continue
