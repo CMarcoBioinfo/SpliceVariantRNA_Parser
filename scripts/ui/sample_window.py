@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 from scripts.core.qc_manager import open_qc_html
 from scripts.core.sashimi_manager import open_sashimi_plot
 from scripts.ui.events_manager import EventsManager
+from scripts.ui.canvas_table import CanvasTable   # 🔥 nouveau
 
 
 def open_patient_window(result, saved_size=None, saved_location=None):
@@ -24,50 +25,29 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     for cat_name, events in events_by_cat.items():
         cols = columns_by_cat.get(cat_name, [])
 
-        # Reconstruction initiale
-        vals = manager.build_table_values(cat_name)
-
-        table = sg.Table(
-            values=vals,
-            headings=cols,
-            key=f"-TABLE-{cat_name}-",
-            auto_size_columns=True,
-            enable_events=True,
-            enable_click_events=True,
+        # Canvas remplace sg.Table
+        canvas = sg.Canvas(
+            key=f"-CANVAS-{cat_name}-",
+            size=(1000, 400),
+            background_color="white",
             expand_x=True,
-            expand_y=True,
-            num_rows=15
+            expand_y=True
         )
 
-        # ---------------------------------------------------------
-        # AJOUT FAUX HEADER FILTRES (aligné sous le vrai header)
-        # ---------------------------------------------------------
+        # Ligne de filtres (vrais Inputs)
         filter_inputs = [
             sg.Input(
                 key=f"-FILTER-{cat_name}-{col}-",
                 size=(12, 1),
-                enable_events=True,
-                justification="left",
-                border_width=0,
-                pad=(0, 0)
+                enable_events=True
             )
             for col in cols
         ]
 
-        fake_header = sg.Frame(
-            "",
-            [[*filter_inputs]],
-            relief=sg.RELIEF_FLAT,
-            border_width=0,
-            pad=(0, 0),
-            expand_x=True
-        )
-        # ---------------------------------------------------------
-
         tabs.append(
             sg.Tab(cat_name, [
-                [table],
-                [fake_header]   # 🔥 juste sous le header
+                [canvas],
+                [*filter_inputs]   # 🔥 vraie ligne de filtres
             ], key=f"-TAB-{cat_name}-")
         )
 
@@ -134,6 +114,20 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             enable_close_attempted_event=True
         )
 
+    # --- Création des CanvasTable ---
+    tables = {}
+    for cat_name in events_by_cat.keys():
+        canvas_elem = window[f"-CANVAS-{cat_name}-"]
+        tk_canvas = canvas_elem.TKCanvas
+
+        tables[cat_name] = CanvasTable(
+            canvas=tk_canvas,
+            columns=columns_by_cat[cat_name],
+            data=manager.build_table_values(cat_name)
+        )
+
+        tables[cat_name].draw()
+
     # --- Catégorie active ---
     current_category = list(events_by_cat.keys())[0] if events_by_cat else None
 
@@ -157,64 +151,29 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             current_category = tab_key.replace("-TAB-", "").rstrip("-")
             window["-DETAILS-"].update("")
 
-        # --- Sélection d'une ligne ---
-        if isinstance(event, str) and event.startswith("-TABLE-") and current_category:
-            try:
-                selected = values[event]
-                if not selected:
-                    continue
-        
-                idx = values[event][0]
-        
-                if idx < 0 or idx >= len(events_by_cat[current_category]):
-                    continue
-        
-                details = manager.extract_details(current_category, idx)
-                window["-DETAILS-"].update(details)
-        
-            except Exception as e:
-                window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
-
-        # ---------------------------------------------------------
-        # AJOUT FAUX HEADER FILTRES : gestion des champs
-        # ---------------------------------------------------------
+        # --- Filtres ---
         if isinstance(event, str) and event.startswith("-FILTER-"):
-            # event = "-FILTER-cat-col-"
             _, _, cat, col, _ = event.split("-")
-
             value = values[event]
 
-            # 1. effacer les filtres existants pour cette colonne
             manager.clear_filters(cat, col)
 
-            # 2. si non vide → ajouter un filtre simple
             if value.strip():
                 manager.add_filter(cat, col, value.strip(), mode="AND")
 
-            # 3. appliquer filtres + tri
             new_values = manager.sort_category(cat, 0)
-
-            # 4. mettre à jour la table
-            window[f"-TABLE-{cat}-"].update(values=new_values)
-
+            tables[cat].update_data(new_values)
             continue
-        # ---------------------------------------------------------
 
-        # --- TRI ---
-        elif ( isinstance(event, tuple)
-               and isinstance(event[0], str)
-               and event[0].startswith("-TABLE-")
-               and event[1] == "+CLICKED+"
-               and isinstance(event[2], tuple)
-               and event[2][0] == -1
-               and current_category):
-                   
-            col_index = event[2][1]
-        
-            new_values = manager.sort_category(current_category, col_index)
-        
-            window[event[0]].update(values=new_values)
-            continue
+        # --- Sélection d'une ligne ---
+        if current_category:
+            idx = tables[current_category].get_selected_index()
+            if idx is not None:
+                try:
+                    details = manager.extract_details(current_category, idx)
+                    window["-DETAILS-"].update(details)
+                except Exception as e:
+                    window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
 
         # --- QC ---
         if event == "-QC-RAW-":
@@ -229,16 +188,15 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         # --- Sashimi ---
         if event == "-SASHIMI-" and current_category:
             try:
-                idx = values[f"-TABLE-{current_category}-"][0]
-                ev = events_by_cat[current_category][idx]
-
-                open_sashimi_plot(
-                    sashimi_zip=sashimi_zip,
-                    event=ev,
-                    window=window,
-                    tmp_dir=tmp_dir
-                )
-
+                idx = tables[current_category].get_selected_index()
+                if idx is not None:
+                    ev = events_by_cat[current_category][idx]
+                    open_sashimi_plot(
+                        sashimi_zip=sashimi_zip,
+                        event=ev,
+                        window=window,
+                        tmp_dir=tmp_dir
+                    )
             except Exception as e:
                 window["-STATUS-"].update(f"Erreur sashimi : {e}", text_color="red")
 
