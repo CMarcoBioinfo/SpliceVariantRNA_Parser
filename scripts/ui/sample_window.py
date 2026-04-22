@@ -27,12 +27,14 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     # -------------------------------------------------------------------------
     # CONSTRUCTION DES TABS
     # -------------------------------------------------------------------------
-
+    
     tabs = []
-    cols = columns_by_cat.get(cat_name) or []
-    vals = manager.build_table_values(cat_name) or []
     
     for cat_name in events_by_cat:
+    
+        cols = columns_by_cat.get(cat_name) or []
+        vals = manager.build_table_values(cat_name) or []
+    
         table = sg.Table(
             values=vals,
             headings=cols,
@@ -44,6 +46,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             expand_y=True,
             num_rows=15
         )
+    
         tabs.append(sg.Tab(cat_name, [[table]], key=f"-TAB-{cat_name}-"))
 
     tab_group = sg.TabGroup(
