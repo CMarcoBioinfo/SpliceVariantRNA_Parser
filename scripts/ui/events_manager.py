@@ -1,3 +1,5 @@
+from scripts.core.utils import is_number, parse_position
+
 class EventsManager:
     def __init__(self, events_by_cat, columns_by_cat):
         self.events_by_cat = events_by_cat
