@@ -6,15 +6,21 @@ class EventsManager:
         self.columns_by_cat = columns_by_cat
         self.sort_states = {}
 
+    # ---------------------------------------------------------
+    # RECONSTRUCTION DES LIGNES (identique à ton code d’origine)
+    # ---------------------------------------------------------
     def build_table_values(self, category):
         evs = self.events_by_cat.get(category) or []
         cols = self.columns_by_cat.get(category) or []
+
         return [
             [ev.get(col + "_fmt", ev.get(col, "")) for col in cols]
             for ev in evs
         ]
 
-    # 🔥 ÉTAPE 2 : tri déplacé ici
+    # ---------------------------------------------------------
+    # TRI (identique à ton code d’origine, mais centralisé)
+    # ---------------------------------------------------------
     def sort_category(self, category, col_index):
         cols = self.columns_by_cat.get(category) or []
         if not cols:
