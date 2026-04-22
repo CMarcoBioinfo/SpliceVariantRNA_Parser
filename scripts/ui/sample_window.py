@@ -90,6 +90,23 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     # -------------------------------------------------------------------------
     # CRÉATION FENÊTRE
     # -------------------------------------------------------------------------
+    print("\n================ DEBUG LAYOUT ================")
+
+    print("events_by_cat =", events_by_cat)
+    print("columns_by_cat =", columns_by_cat)
+    
+    for cat_name in events_by_cat:
+        print(f"\n--- CAT: {cat_name} ---")
+        print("  columns =", columns_by_cat.get(cat_name))
+        print("  events =", events_by_cat.get(cat_name))
+    
+        cols = columns_by_cat.get(cat_name) or []
+        vals = manager.build_table_values(cat_name)
+    
+        print("  cols (after or []):", cols)
+        print("  vals (first row):", vals[0] if vals else "EMPTY")
+    
+    print("==============================================\n")
 
     window = sg.Window(
         f"SpliceVariantRNA Viewer — {patient_id}",
