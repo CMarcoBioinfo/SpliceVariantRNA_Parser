@@ -29,10 +29,13 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     # -------------------------------------------------------------------------
 
     tabs = []
+    cols = columns_by_cat.get(cat_name) or []
+    vals = manager.build_table_values(cat_name) or []
+    
     for cat_name in events_by_cat:
         table = sg.Table(
-            values=manager.build_table_values(cat_name),
-            headings=columns_by_cat[cat_name],
+            values=vals,
+            headings=cols,
             key=f"-TABLE-{cat_name}-",
             auto_size_columns=True,
             enable_events=True,
