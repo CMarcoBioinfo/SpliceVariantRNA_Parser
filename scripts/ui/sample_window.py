@@ -163,32 +163,11 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                and event[1] == "+CLICKED+"
                and isinstance(event[2], tuple)
                and event[2][0] == -1
-               and current_category):        
-
-            col_name = columns_by_cat[current_category][event[2][1]]
-            ev_list = events_by_cat[current_category]
-            numeric = all(is_number(ev.get(col_name)) for ev in ev_list)
-            sort_key = f"{current_category}_{col_name}"
-            reverse = sort_states.get(sort_key, 0)
-
-            if numeric:
-                ev_list.sort(key=lambda ev: ev.get(col_name, float("inf")), reverse = bool(reverse))
-            elif col_name.lower() == "position":
-                ev_list.sort(key=lambda ev: parse_position(ev.get(col_name, "")), reverse=bool(reverse))
-            else:
-                ev_list.sort(key=lambda ev: str(ev.get(col_name, "")).lower(), reverse = bool(reverse))
-            
-            sort_states[sort_key] = 1 - reverse
-                
-            new_values = []
-            for ev in ev_list:
-                row = []
-                for c in columns_by_cat[current_category]:
-                    if c + "_fmt" in ev:
-                        row.append(ev[c + "_fmt"])
-                    else:
-                        row.append(ev.get(c, ""))
-                new_values.append(row)
+               and current_category):
+                   
+            col_index = event[2][1]
+        
+            new_values = manager.sort_category(current_category, col_index)
         
             window[event[0]].update(values=new_values)
             continue
