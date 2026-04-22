@@ -16,9 +16,8 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     qc_zip = result.qc_zip
     sashimi_zip = result.sashimi_zip
     tmp_dir = result.tmp_dir
-    sort_states = {}
 
-    # --- Gestionnaire externe (ÉTAPE 1) ---
+    # --- Gestionnaire externe ---
     manager = EventsManager(events_by_cat, columns_by_cat)
 
     # --- Construction des onglets ---
@@ -26,7 +25,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     for cat_name, events in events_by_cat.items():
         cols = columns_by_cat.get(cat_name, [])
 
-        # 🔥 ÉTAPE 1 : reconstruction externalisée
+        # Reconstruction initiale
         vals = manager.build_table_values(cat_name)
 
         table = sg.Table(
@@ -41,8 +40,25 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             num_rows=15
         )
 
+        # ---------------------------------------------------------
+        # AJOUT FILTRES : ligne simple de filtres sous la table
+        # ---------------------------------------------------------
+        filter_row = [
+            sg.Input(
+                key=f"-FILTER-{cat_name}-{col}-",
+                size=(12, 1),
+                enable_events=True
+            )
+            for col in cols
+        ]
+        # ---------------------------------------------------------
+
         tabs.append(
-            sg.Tab(cat_name, [[table]], key=f"-TAB-{cat_name}-")
+            sg.Tab(cat_name, [
+                [table],
+                [sg.Text("Filtres :")],
+                filter_row
+            ], key=f"-TAB-{cat_name}-")
         )
 
     tab_group = sg.TabGroup(
@@ -115,7 +131,6 @@ def open_patient_window(result, saved_size=None, saved_location=None):
     while True:
         event, values = window.read()
         print("EVENT =", event)
-        print("TYPE =",type(event))
         print("VALUES =", values)
         print("-----------------------------------------------------------------------------")
 
@@ -148,15 +163,38 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 if idx < 0 or idx >= len(events_by_cat[current_category]):
                     continue
         
-                # 🔥 ÉTAPE 3 : détails externalisés
                 details = manager.extract_details(current_category, idx)
                 window["-DETAILS-"].update(details)
         
             except Exception as e:
                 window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
 
-        
-        # --- TRI (inchangé à l’étape 1) ---
+        # ---------------------------------------------------------
+        # AJOUT FILTRES : gestion des champs de filtre
+        # ---------------------------------------------------------
+        if isinstance(event, str) and event.startswith("-FILTER-"):
+            # event = "-FILTER-cat-col-"
+            _, _, cat, col, _ = event.split("-")
+
+            value = values[event]
+
+            # 1. effacer les filtres existants pour cette colonne
+            manager.clear_filters(cat, col)
+
+            # 2. si non vide → ajouter un filtre simple
+            if value.strip():
+                manager.add_filter(cat, col, value.strip(), mode="AND")
+
+            # 3. appliquer filtres + tri
+            new_values = manager.sort_category(cat, 0)
+
+            # 4. mettre à jour la table
+            window[f"-TABLE-{cat}-"].update(values=new_values)
+
+            continue
+        # ---------------------------------------------------------
+
+        # --- TRI ---
         elif ( isinstance(event, tuple)
                and isinstance(event[0], str)
                and event[0].startswith("-TABLE-")
@@ -200,4 +238,3 @@ def open_patient_window(result, saved_size=None, saved_location=None):
 
     window.close()
     return saved_size, saved_location
-
