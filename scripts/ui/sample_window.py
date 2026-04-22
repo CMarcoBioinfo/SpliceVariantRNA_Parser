@@ -142,29 +142,19 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 selected = values[event]
                 if not selected:
                     continue
-
+        
                 idx = values[event][0]
-
+        
                 if idx < 0 or idx >= len(events_by_cat[current_category]):
                     continue
-                
-                ev = events_by_cat[current_category][idx]
-
-                detail_keys = [
-                    "Gene", "Event", "Position", "Depth", "PSI-like",
-                    "Distribution", "p-value", "Significative",
-                    "nbSignificantSamples", "nbFilteredSamples",
-                    "cStart", "cEnd", "HGVS", "Source"
-                ]
-
-                details = "\n".join(
-                    f"{k}: {ev[k]}" for k in detail_keys if k in ev
-                )
-
+        
+                # 🔥 ÉTAPE 3 : détails externalisés
+                details = manager.extract_details(current_category, idx)
                 window["-DETAILS-"].update(details)
-
+        
             except Exception as e:
                 window["-STATUS-"].update(f"Erreur détails : {e}", text_color="red")
+
         
         # --- TRI (inchangé à l’étape 1) ---
         elif ( isinstance(event, tuple)
