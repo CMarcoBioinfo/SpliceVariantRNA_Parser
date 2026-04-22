@@ -1,5 +1,6 @@
 import os
 import shutil
+import traceback
 import PySimpleGUI as sg
 from scripts.core.recap_parser import list_groups, list_samples
 from scripts.core.tmp_manager import init_tmp_session, cleanup_tmp, init_qc_tmp, init_sashimi_tmp
@@ -254,7 +255,7 @@ def main():
             except Exception as e:
                 window["-STATUS-"].update(f"Erreur analyse : {e}", text_color="red")
                 print("Erreur analyse :", e)
-
+                traceback.print_exc()
 
     window.close()
     cleanup_tmp()
