@@ -15,59 +15,41 @@ class FilterUI:
             popup_location = (wx + ww // 2, wy + wh // 2)
 
         # ---------------------------------------------------------
-        # RECONSTRUCTION DU LAYOUT DYNAMIQUE
+        # FORMATAGE TEXTE (stable, comme l’ancienne version)
         # ---------------------------------------------------------
-        def build_filters_layout():
-            layout = []
-            filters = self.manager.get_filters(category).get(col_name, [])
+        def format_groups():
+            out = []
+            groups = self.manager.get_filters(category).get(col_name, [])
 
-            for g_idx, group in enumerate(filters):
-                layout.append([sg.Text(f"Groupe {g_idx+1} (OR)", font=("Arial", 11, "bold"))])
+            for g_idx, group in enumerate(groups):
+                out.append(f"[Groupe {g_idx+1} — OR]")
 
-                # Conditions existantes
-                for c_idx, cond in enumerate(group["conditions"]):
-                    layout.append([
-                        sg.Combo(
-                            ["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="],
-                            default_value=cond["op"],
-                            key=f"-OP-{g_idx}-{c_idx}-",
-                            size=(10,1)
-                        ),
-                        sg.Input(cond["value"], key=f"-VAL-{g_idx}-{c_idx}-", size=(20,1)),
-                        sg.Button("❌", key=f"-DEL-COND-{g_idx}-{c_idx}-")
-                    ])
+                for cond in group["conditions"]:
+                    out.append(f'   • {cond["op"]} "{cond["value"]}"')
 
-                # Zone de saisie pour une nouvelle condition OR
-                layout.append([
-                    sg.Combo(
-                        ["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="],
-                        default_value="contains",
-                        key=f"-NEW-OP-{g_idx}-",
-                        size=(10,1)
-                    ),
-                    sg.Input("", key=f"-NEW-VAL-{g_idx}-", size=(20,1)),
-                    sg.Button("+ Ajouter OR", key=f"-ADD-OR-{g_idx}-")
-                ])
+                out.append("")  # ligne vide
 
-                layout.append([sg.HorizontalSeparator()])
-
-            # Ajouter un groupe AND
-            layout.append([sg.Button("+ Ajouter un groupe AND", key="-ADD-GROUP-")])
-
-            return layout
+            return out
 
         # ---------------------------------------------------------
-        # LAYOUT PRINCIPAL
+        # LAYOUT PRINCIPAL (statique = stable)
         # ---------------------------------------------------------
         layout = [
             [sg.Text(f"Filtres pour {col_name}", font=("Arial", 12, "bold"))],
-            [sg.Column(
-                build_filters_layout(),
-                key="-FILTERS-COL-",
-                scrollable=True,
-                vertical_scroll_only=True,
-                size=(450, 300)
-            )],
+
+            [sg.Text("Opérateur :"),
+             sg.Combo(["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="],
+                      default_value="contains", key="-OP-", size=(12,1))],
+
+            [sg.Text("Valeur :"), sg.Input(key="-VAL-", size=(20,1))],
+
+            [sg.Button("+ Ajouter OR", key="-ADD-OR-"),
+             sg.Button("+ Ajouter groupe AND", key="-ADD-GROUP-")],
+
+            [sg.Text("Filtres actifs :")],
+            [sg.Listbox(values=format_groups(), key="-LIST-", size=(45,12))],
+
+            [sg.Button("Supprimer", key="-DEL-")],
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
 
@@ -79,11 +61,11 @@ class FilterUI:
             finalize=True,
             disable_close=True,
             location=popup_location,
-            resizable=True
+            resizable=False
         )
 
-        last_position = popup_location
         changed = False
+        last_position = popup_location
 
         # ---------------------------------------------------------
         # BOUCLE POPUP
@@ -109,28 +91,46 @@ class FilterUI:
             # Ajouter un groupe AND
             if ev == "-ADD-GROUP-":
                 self.manager.add_filter_group(category, col_name)
-                popup["-FILTERS-COL-"].update(build_filters_layout())
+                popup["-LIST-"].update(values=format_groups())
                 changed = True
 
             # Ajouter une condition OR
-            if ev.startswith("-ADD-OR-"):
-                g_idx = int(ev.split("-")[3])
-                op = vals.get(f"-NEW-OP-{g_idx}-")
-                val = vals.get(f"-NEW-VAL-{g_idx}-")
+            if ev == "-ADD-OR-":
+                op = vals["-OP-"]
+                val = vals["-VAL-"]
 
                 if val:
+                    # Ajout dans le dernier groupe
+                    groups = self.manager.get_filters(category).get(col_name, [])
+                    if not groups:
+                        self.manager.add_filter_group(category, col_name)
+
+                    g_idx = len(groups) - 1
                     self.manager.add_condition(category, col_name, g_idx, op, val)
                     changed = True
 
-                popup["-FILTERS-COL-"].update(build_filters_layout())
+                popup["-LIST-"].update(values=format_groups())
 
-            # Supprimer une condition
-            if ev.startswith("-DEL-COND-"):
-                _, _, g_idx, c_idx, _ = ev.split("-")
-                g_idx = int(g_idx)
-                c_idx = int(c_idx)
+            # Supprimer
+            if ev == "-DEL-":
+                selected = vals["-LIST-"]
+                if not selected:
+                    continue
 
-                self.manager.remove_condition(category, col_name, g_idx, c_idx)
-                popup["-FILTERS-COL-"].update(build_filters_layout())
-                changed = True
+                line = selected[0]
+
+                # Trouver groupe + condition
+                groups = self.manager.get_filters(category).get(col_name, [])
+                idx = 0
+                for g_idx, group in enumerate(groups):
+                    for c_idx, cond in enumerate(group["conditions"]):
+                        text = f'   • {cond["op"]} "{cond["value"]}"'
+                        if text == line:
+                            self.manager.remove_condition(category, col_name, g_idx, c_idx)
+                            changed = True
+                            popup["-LIST-"].update(values=format_groups())
+                            break
+
+        # fin boucle
+
 
