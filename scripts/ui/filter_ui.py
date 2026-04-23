@@ -54,8 +54,7 @@ class FilterUI:
             keep_on_top=True,
             finalize=True,
             disable_close=True,
-            location=popup_location,
-            enable_window_configure_events=True
+            location=popup_location
         )
 
         changed = False
@@ -65,10 +64,12 @@ class FilterUI:
         while True:
             ev, vals = popup.read()
 
-            # Mise à jour position
-            if ev == "-Configure-":
-                last_position = popup.current_location()
-                continue
+            # Sauvegarde dynamique de la position (méthode sample_window)
+            if popup.TKroot is not None:
+                try:
+                    last_position = popup.current_location()
+                except:
+                    pass
 
             # Fermer
             if ev == "Fermer":
