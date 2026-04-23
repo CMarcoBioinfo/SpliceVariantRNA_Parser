@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 from scripts.core.qc_manager import open_qc_html
 from scripts.core.sashimi_manager import open_sashimi_plot
 from scripts.ui.events_manager import EventsManager
+from scripts.ui.filter_ui import FilterUI
 
 
 def open_patient_window(result, saved_size=None, saved_location=None):
@@ -145,89 +146,19 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             # --- Ligne 0 = filtres ---
             if row == 0:
                 col_name = columns_by_cat[current_category][col]
-
-                # Position et taille de la fenêtre
-                wx, wy = window.current_location()
-                ww, wh = window.size
-
-                # Centre exact de la fenêtre
-                popup_x = wx + ww // 2
-                popup_y = wy + wh // 2
-
-                # --- Popup avancé pour filtres texte ---
-                existing_filters = manager.get_filters(current_category).get(col_name, [])
-                ops = ["contains", "startswith", "endswith", "=", "!="]
-
-                layout_popup = [
-                    [sg.Text(f"Filtre pour {col_name}", font=("Arial", 12, "bold"))],
-                    [sg.Text("Opérateur :"), sg.Combo(ops, default_value="contains", key="-OP-")],
-                    [sg.Text("Valeur :"), sg.Input(key="-VAL-")],
-                    [sg.Button("+ Ajouter", key="-ADD-")],
-                    [sg.Text("Filtres actifs :")],
-                ]
-
-                for i, f in enumerate(existing_filters):
-                    bullet = "•" if f["mode"] == "AND" else "○"
-                    txt = f'{bullet} {f["op"]} "{f["value"]}" ({f["mode"]})'
-                    layout_popup.append([sg.Text(txt), sg.Button("❌", key=f"-DEL-{i}-")])
-
-                layout_popup += [
-                    [sg.Text("Mode entre filtres :")],
-                    [
-                        sg.Radio("AND", "MODE", default=True, key="-MODE-AND-"),
-                        sg.Radio("OR", "MODE", default=False, key="-MODE-OR-")
-                    ],
-                    [sg.Button("OK"), sg.Button("Annuler")]
-                ]
-
-                popup = sg.Window(
-                    f"Filtre {col_name}",
-                    layout_popup,
-                    modal=True,
-                    keep_on_top=True,
-                    finalize=True,
-                    location=(popup_x, popup_y)
+            
+                changed = filter_ui.open_filter_popup(
+                    parent_window=window,
+                    category=current_category,
+                    col_name=col_name
                 )
-
-                while True:
-                    ev_p, vals_p = popup.read()
-
-                    if ev_p in (sg.WIN_CLOSED, "Annuler"):
-                        popup.close()
-                        break
-
-                    if ev_p == "-ADD-":
-                        op = vals_p["-OP-"]
-                        val = vals_p["-VAL-"]
-                        mode = "AND" if vals_p["-MODE-AND-"] else "OR"
-
-                        if val:
-                            manager.add_filter(current_category, col_name, val, op=op, mode=mode)
-
-                        popup.close()
-                        window[f"-TABLE-{current_category}-"].update(
-                            values=manager.sort_category(current_category, 0)
-                        )
-                        break
-
-                    if isinstance(ev_p, str) and ev_p.startswith("-DEL-"):
-                        idx = int(ev_p.split("-")[2])
-                        manager.filters[current_category][col_name].pop(idx)
-
-                        popup.close()
-                        window[f"-TABLE-{current_category}-"].update(
-                            values=manager.sort_category(current_category, 0)
-                        )
-                        break
-
-                    if ev_p == "OK":
-                        popup.close()
-                        window[f"-TABLE-{current_category}-"].update(
-                            values=manager.sort_category(current_category, 0)
-                        )
-                        break
-
-                continue  # on ne va pas au tri si c'était un clic filtre
+            
+                if changed:
+                    window[f"-TABLE-{current_category}-"].update(
+                        values=manager.sort_category(current_category, 0)
+                    )
+            
+                continue
 
             # --- Tri ---
             if row == -1:
