@@ -149,21 +149,89 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 popup_x = wx + ww // 2
                 popup_y = wy + wh // 2
                 
-                value = sg.popup_get_text(
-                    f"Filtre pour {col_name}",
-                    keep_on_top=True,
-                    location=(popup_x, popup_y)
-                )
+            # --- Popup avancé pour filtres texte ---
+            col_name = columns_by_cat[current_category][col]
+            
+            # Récupération des filtres existants
+            existing_filters = manager.get_filters(current_category).get(col_name, [])
+            
+            # Opérateurs texte disponibles
+            ops = ["contains", "startswith", "endswith", "=", "!="]
+            
+            layout_popup = [
+                [sg.Text(f"Filtre pour {col_name}", font=("Arial", 12, "bold"))],
+                [sg.Text("Opérateur :"), sg.Combo(ops, default_value="contains", key="-OP-")],
+                [sg.Text("Valeur :"), sg.Input(key="-VAL-")],
+                [sg.Button("+ Ajouter", key="-ADD-")],
+                [sg.Text("Filtres actifs :")],
+            ]
+            
+            # Ajout dynamique des filtres existants
+            for i, f in enumerate(existing_filters):
+                bullet = "•" if f["mode"] == "AND" else "○"
+                txt = f'{bullet} {f["op"]} "{f["value"]}" ({f["mode"]})'
+                layout_popup.append([sg.Text(txt), sg.Button("❌", key=f"-DEL-{i}-")])
+            
+            # Mode global AND/OR
+            layout_popup += [
+                [sg.Text("Mode entre filtres :")],
+                [
+                    sg.Radio("AND", "MODE", default=True, key="-MODE-AND-"),
+                    sg.Radio("OR", "MODE", default=False, key="-MODE-OR-")
+                ],
+                [sg.Button("OK"), sg.Button("Annuler")]
+            ]
+            
+            popup = sg.Window(
+                f"Filtre {col_name}",
+                layout_popup,
+                modal=True,
+                keep_on_top=True,
+                finalize=True
+            )
+            
+            while True:
+                ev_p, vals_p = popup.read()
+            
+                if ev_p in (sg.WIN_CLOSED, "Annuler"):
+                    popup.close()
+                    break
+            
+                # Ajouter un filtre
+                if ev_p == "-ADD-":
+                    op = vals_p["-OP-"]
+                    val = vals_p["-VAL-"]
+                    mode = "AND" if vals_p["-MODE-AND-"] else "OR"
+            
+                    if val:
+                        manager.add_filter(current_category, col_name, val, op=op, mode=mode)
+            
+                    # Rafraîchir le popup
+                    popup.close()
+                    window[f"-TABLE-{current_category}-"].update(
+                        values=manager.sort_category(current_category, 0)
+                    )
+                    break
+            
+                # Suppression d’un filtre
+                if ev_p.startswith("-DEL-"):
+                    idx = int(ev_p.split("-")[2])
+                    manager.filters[current_category][col_name].pop(idx)
+            
+                    popup.close()
+                    window[f"-TABLE-{current_category}-"].update(
+                        values=manager.sort_category(current_category, 0)
+                    )
+                    break
+            
+                # OK → juste fermer
+                if ev_p == "OK":
+                    popup.close()
+                    window[f"-TABLE-{current_category}-"].update(
+                        values=manager.sort_category(current_category, 0)
+                    )
+                    break
 
-
-                manager.clear_filters(current_category, col_name)
-                if value:
-                    # Pour l'instant : filtre texte simple
-                    manager.add_filter(current_category, col_name, value, op="contains", mode="AND")
-
-                new_vals = manager.sort_category(current_category, 0)
-                window[f"-TABLE-{current_category}-"].update(values=new_vals)
-                continue
 
             # --- Tri ---
             if row == -1:
