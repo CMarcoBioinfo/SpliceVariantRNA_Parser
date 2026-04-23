@@ -141,7 +141,18 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             # --- Ligne 0 = filtres ---
             if row == 0:
                 col_name = columns_by_cat[current_category][col]
-                value = sg.popup_get_text(f"Filtre pour {col_name}")
+                # Position de la fenêtre
+                wx, wy = window.current_location()
+                
+                # Décalage vertical pour placer le popup sous la ligne 0
+                popup_x = wx + 200
+                popup_y = wy + 150
+                
+                value = sg.popup_get_text(
+                    f"Filtre pour {col_name}",
+                    keep_on_top=True,
+                    location=(popup_x, popup_y)
+                )
 
                 manager.clear_filters(current_category, col_name)
                 if value:
