@@ -210,7 +210,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                         )
                         break
 
-                    if ev_p.startswith("-DEL-"):
+                    if isinstance(ev_p, str) and ev_p.startswith("-DEL-"):
                         idx = int(ev_p.split("-")[2])
                         manager.filters[current_category][col_name].pop(idx)
 
@@ -227,7 +227,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                         )
                         break
 
-                continue  # IMPORTANT : empêche d'aller au tri ou détails
+                continue  # on ne va pas au tri si c'était un clic filtre
 
             # --- Tri ---
             if row == -1:
@@ -235,7 +235,6 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 new_values = manager.sort_category(current_category, col_index)
                 window[event[0]].update(values=new_values)
                 continue
-
 
         # --- Sélection d'une ligne ---
         if isinstance(event, str) and event.startswith("-TABLE-") and current_category:
