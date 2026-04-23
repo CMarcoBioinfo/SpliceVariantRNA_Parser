@@ -174,13 +174,12 @@ class EventsManager:
                 if not filters:
                     continue
 
-                ev_val = str(ev.get(col_name, "")).lower()
+                ev_val = ev.get(col_name, "")
                 col_keep = None
 
                 for f in filters:
-                    value = f["value"].lower()
+                    match = self.evaluate_filter(ev_val, f)
                     mode = f["mode"]
-                    match = value in ev_val
 
                     if col_keep is None:
                         col_keep = match
