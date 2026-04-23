@@ -6,7 +6,9 @@ class FilterUI:
 
     def open_filter_popup(self, parent_window, category, col_name, saved_position=None):
 
-        # --- Position d'ouverture ---
+        # ---------------------------------------------------------
+        # Position d’ouverture
+        # ---------------------------------------------------------
         if saved_position:
             popup_location = saved_position
         else:
@@ -15,41 +17,51 @@ class FilterUI:
             popup_location = (wx + ww // 2, wy + wh // 2)
 
         # ---------------------------------------------------------
-        # FORMATAGE TEXTE (stable, comme l’ancienne version)
+        # Formatage texte pour la Listbox
         # ---------------------------------------------------------
-        def format_groups():
+        def format_blocks():
             out = []
-            groups = self.manager.get_filters(category).get(col_name, [])
+            blocks = self.manager.get_filters(category).get(col_name, [])
 
-            for g_idx, group in enumerate(groups):
-                out.append(f"[Groupe {g_idx+1} — OR]")
+            for b_idx, block in enumerate(blocks):
+                out.append(f"[Bloc {b_idx+1} — logique: {block['logic']}]")
 
-                for cond in group["conditions"]:
-                    out.append(f'   • {cond["op"]} "{cond["value"]}"')
+                for cond in block["conditions"]:
+                    out.append(f'   • ({cond["logic"]}) {cond["op"]} "{cond["value"]}"')
 
                 out.append("")  # ligne vide
 
             return out
 
         # ---------------------------------------------------------
-        # LAYOUT PRINCIPAL (statique = stable)
+        # Layout principal
         # ---------------------------------------------------------
         layout = [
             [sg.Text(f"Filtres pour {col_name}", font=("Arial", 12, "bold"))],
 
             [sg.Text("Opérateur :"),
-             sg.Combo(["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="],
-                      default_value="contains", key="-OP-", size=(12,1))],
+             sg.Combo(
+                 ["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="],
+                 default_value="contains",
+                 key="-OP-",
+                 size=(12,1)
+             )],
 
             [sg.Text("Valeur :"), sg.Input(key="-VAL-", size=(20,1))],
 
-            [sg.Button("+ Ajouter OR", key="-ADD-OR-"),
-             sg.Button("+ Ajouter groupe AND", key="-ADD-GROUP-")],
+            [sg.Text("Logique avec la suivante :"),
+             sg.Radio("AND", "CONDLOG", default=True, key="-COND-AND-"),
+             sg.Radio("OR", "CONDLOG", default=False, key="-COND-OR-")],
+
+            [sg.Button("+ Ajouter condition", key="-ADD-COND-"),
+             sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
             [sg.Text("Filtres actifs :")],
-            [sg.Listbox(values=format_groups(), key="-LIST-", size=(45,12))],
+            [sg.Listbox(values=format_blocks(), key="-LIST-", size=(50,12))],
 
-            [sg.Button("Supprimer", key="-DEL-")],
+            [sg.Button("Supprimer", key="-DEL-"),
+             sg.Button("Changer logique du bloc", key="-TOGGLE-BLOCK-")],
+
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
 
@@ -60,15 +72,14 @@ class FilterUI:
             keep_on_top=True,
             finalize=True,
             disable_close=True,
-            location=popup_location,
-            resizable=False
+            location=popup_location
         )
 
         changed = False
         last_position = popup_location
 
         # ---------------------------------------------------------
-        # BOUCLE POPUP
+        # Boucle popup
         # ---------------------------------------------------------
         while True:
             ev, vals = popup.read()
@@ -80,57 +91,69 @@ class FilterUI:
                 except:
                     pass
 
+            # Fermer
             if ev in (sg.WIN_CLOSED, "Fermer"):
                 popup.close()
                 return False, last_position
 
+            # Appliquer
             if ev == "Appliquer":
                 popup.close()
                 return changed, last_position
 
-            # Ajouter un groupe AND
-            if ev == "-ADD-GROUP-":
-                self.manager.add_filter_group(category, col_name)
-                popup["-LIST-"].update(values=format_groups())
+            # Ajouter un bloc
+            if ev == "-ADD-BLOCK-":
+                self.manager.add_block(category, col_name)
+                popup["-LIST-"].update(values=format_blocks())
                 changed = True
 
-            # Ajouter une condition OR
-            if ev == "-ADD-OR-":
+            # Ajouter une condition
+            if ev == "-ADD-COND-":
                 op = vals["-OP-"]
                 val = vals["-VAL-"]
+                logic = "AND" if vals["-COND-AND-"] else "OR"
 
                 if val:
-                    # Ajout dans le dernier groupe
-                    groups = self.manager.get_filters(category).get(col_name, [])
-                    if not groups:
-                        self.manager.add_filter_group(category, col_name)
+                    blocks = self.manager.get_filters(category).get(col_name, [])
+                    if not blocks:
+                        self.manager.add_block(category, col_name)
 
-                    g_idx = len(groups) - 1
-                    self.manager.add_condition(category, col_name, g_idx, op, val)
+                    b_idx = len(blocks) - 1
+                    self.manager.add_condition(category, col_name, b_idx, op, val, logic)
                     changed = True
 
-                popup["-LIST-"].update(values=format_groups())
+                popup["-LIST-"].update(values=format_blocks())
 
-            # Supprimer
+            # Supprimer une condition
             if ev == "-DEL-":
                 selected = vals["-LIST-"]
                 if not selected:
                     continue
 
                 line = selected[0]
+                blocks = self.manager.get_filters(category).get(col_name, [])
 
-                # Trouver groupe + condition
-                groups = self.manager.get_filters(category).get(col_name, [])
-                idx = 0
-                for g_idx, group in enumerate(groups):
-                    for c_idx, cond in enumerate(group["conditions"]):
-                        text = f'   • {cond["op"]} "{cond["value"]}"'
+                for b_idx, block in enumerate(blocks):
+                    for c_idx, cond in enumerate(block["conditions"]):
+                        text = f'   • ({cond["logic"]}) {cond["op"]} "{cond["value"]}"'
                         if text == line:
-                            self.manager.remove_condition(category, col_name, g_idx, c_idx)
+                            self.manager.remove_condition(category, col_name, b_idx, c_idx)
                             changed = True
-                            popup["-LIST-"].update(values=format_groups())
+                            popup["-LIST-"].update(values=format_blocks())
                             break
 
-        # fin boucle
+            # Changer logique du bloc (AND <-> OR)
+            if ev == "-TOGGLE-BLOCK-":
+                selected = vals["-LIST-"]
+                if not selected:
+                    continue
 
+                line = selected[0]
+                blocks = self.manager.get_filters(category).get(col_name, [])
 
+                for b_idx, block in enumerate(blocks):
+                    if f"[Bloc {b_idx+1}" in line:
+                        block["logic"] = "OR" if block["logic"] == "AND" else "AND"
+                        changed = True
+                        popup["-LIST-"].update(values=format_blocks())
+                        break
