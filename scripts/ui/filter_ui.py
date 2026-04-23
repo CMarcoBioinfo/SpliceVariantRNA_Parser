@@ -28,6 +28,13 @@ class FilterUI:
         self.manager = events_manager
         self.popup_manager = PopupManager()
 
+    def _close_and_save(self, popup):
+        """Force Tkinter à mettre à jour la position avant fermeture."""
+        popup.refresh()
+        popup.read(timeout=10)
+        self.popup_manager.save_position(popup)
+        popup.close()
+
     def open_filter_popup(self, parent_window, category, col_name):
         """Ouvre le popup de filtre et renvoie True si la table doit être rafraîchie."""
 
@@ -73,11 +80,12 @@ class FilterUI:
         while True:
             ev_p, vals_p = popup.read()
 
+            # Fermeture simple
             if ev_p in (sg.WIN_CLOSED, "Annuler"):
-                self.popup_manager.save_position(popup)
-                popup.close()
+                self._close_and_save(popup)
                 break
 
+            # Ajout d'un filtre
             if ev_p == "-ADD-":
                 op = vals_p["-OP-"]
                 val = vals_p["-VAL-"]
@@ -87,23 +95,21 @@ class FilterUI:
                     self.manager.add_filter(category, col_name, val, op=op, mode=mode)
                     changed = True
 
-                self.popup_manager.save_position(popup)
-                popup.close()
+                self._close_and_save(popup)
                 break
 
+            # Suppression d'un filtre
             if isinstance(ev_p, str) and ev_p.startswith("-DEL-"):
                 idx = int(ev_p.split("-")[2])
                 self.manager.filters[category][col_name].pop(idx)
                 changed = True
 
-                self.popup_manager.save_position(popup)
-                popup.close()
+                self._close_and_save(popup)
                 break
 
+            # OK → fermer sans ajouter
             if ev_p == "OK":
-                self.popup_manager.save_position(popup)
-                popup.close()
+                self._close_and_save(popup)
                 break
 
         return changed
-
