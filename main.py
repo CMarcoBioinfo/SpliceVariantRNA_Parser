@@ -21,9 +21,10 @@ open_console()
 
 LAST_SAMPLE_SIZE = None
 LAST_SAMPLE_LOCATION = None
+LAST_FILTER_POSITION = None
 
 def main():
-    global LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION
+    global LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION, LAST_FILTER_POSITION
     sg.theme("SystemDefault")
 
     session_tmp = init_tmp_session()
@@ -248,7 +249,7 @@ def main():
                 )
 
                 # Ouvrir la fenêtre patient
-                LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION = open_patient_window(result, LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION)
+                LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION, LAST_FILTER_POSITION = open_patient_window(result, LAST_SAMPLE_SIZE, LAST_SAMPLE_LOCATION, LAST_FILTER_POSITION)
 
                 window["-STATUS-"].update("Analyse terminée.", text_color="green")
 
