@@ -19,6 +19,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
 
     # --- Gestionnaire externe ---
     manager = EventsManager(events_by_cat, columns_by_cat)
+    filter_ui = FilterUI(manager)
 
     # --- Construction des onglets ---
     tabs = []
@@ -147,12 +148,12 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             if row == 0:
                 col_name = columns_by_cat[current_category][col]
             
-                changed = FilterUI.open_filter_popup(
+                changed = filter_ui.open_filter_popup(
                     parent_window=window,
                     category=current_category,
                     col_name=col_name
                 )
-            
+
                 if changed:
                     window[f"-TABLE-{current_category}-"].update(
                         values=manager.sort_category(current_category, 0)
