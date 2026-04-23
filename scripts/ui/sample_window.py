@@ -158,7 +158,8 @@ def open_patient_window(result, saved_size=None, saved_location=None):
 
                 manager.clear_filters(current_category, col_name)
                 if value:
-                    manager.add_filter(current_category, col_name, value)
+                    # Pour l'instant : filtre texte simple
+                    manager.add_filter(current_category, col_name, value, op="contains", mode="AND")
 
                 new_vals = manager.sort_category(current_category, 0)
                 window[f"-TABLE-{current_category}-"].update(values=new_vals)
