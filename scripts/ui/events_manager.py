@@ -117,14 +117,24 @@ class EventsManager:
     # ---------------------------------------------------------
     # GESTION DES FILTRES
     # ---------------------------------------------------------
-    def add_filter(self, category, col_name, value, mode="AND"):
-        """Ajoute un filtre sur une colonne."""
+    def add_filter(self, category, col_name, value, op="contains", mode="AND"):
+        """
+        Ajoute un filtre avancé :
+        - op : opérateur (contains, =, >, <, etc.)
+        - value : valeur du filtre
+        - mode : AND/OR entre filtres de la même colonne
+        """
         if not value:
             return
 
         cat_filters = self.filters.setdefault(category, {})
         col_filters = cat_filters.setdefault(col_name, [])
-        col_filters.append({"value": value, "mode": mode})
+
+        col_filters.append({
+            "op": op,
+            "value": value,
+            "mode": mode
+        })
 
     def clear_filters(self, category, col_name=None):
         """Efface les filtres d'une colonne ou de toute la catégorie."""
@@ -138,6 +148,7 @@ class EventsManager:
 
     def get_filters(self, category):
         return self.filters.get(category, {})
+
 
     # ---------------------------------------------------------
     # APPLICATION DES FILTRES
@@ -184,3 +195,62 @@ class EventsManager:
                 filtered.append(ev)
 
         return filtered
+
+    # ---------------------------------------------------------
+    # ÉVALUATION D’UN FILTRE (ÉTAPE 2)
+    # ---------------------------------------------------------
+    def evaluate_filter(self, ev_val, f):
+        """
+        Applique un filtre simple à une valeur de colonne.
+        Étape 2 : uniquement texte + numérique basique.
+        """
+        op = f["op"]
+        value = f["value"]
+
+        # Normalisation texte
+        ev_val_str = str(ev_val).lower()
+        value_str = str(value).lower()
+
+        # -----------------------------
+        # Opérateurs TEXTUELS
+        # -----------------------------
+        if op == "contains":
+            return value_str in ev_val_str
+
+        if op == "startswith":
+            return ev_val_str.startswith(value_str)
+
+        if op == "endswith":
+            return ev_val_str.endswith(value_str)
+
+        if op == "=":
+            return ev_val_str == value_str
+
+        if op == "!=":
+            return ev_val_str != value_str
+
+        # -----------------------------
+        # Opérateurs NUMÉRIQUES
+        # -----------------------------
+        try:
+            ev_num = float(ev_val)
+            val_num = float(value)
+
+            if op == ">":
+                return ev_num > val_num
+            if op == "<":
+                return ev_num < val_num
+            if op == ">=":
+                return ev_num >= val_num
+            if op == "<=":
+                return ev_num <= val_num
+            if op == "=":
+                return ev_num == val_num
+            if op == "!=":
+                return ev_num != val_num
+
+        except:
+            # Si conversion impossible → pas un filtre numérique
+            return False
+
+        return False
