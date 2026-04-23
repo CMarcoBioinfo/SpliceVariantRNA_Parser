@@ -1,7 +1,6 @@
 import PySimpleGUI as sg
 
 class FilterUI:
-    """Gère l'UI des filtres : popup, opérateurs, suppression, etc."""
     def __init__(self, events_manager):
         self.manager = events_manager
 
@@ -19,7 +18,6 @@ class FilterUI:
             ww, wh = parent_window.size
             popup_location = (wx + ww // 2, wy + wh // 2)
 
-        # --- Fonction pour reconstruire le layout ---
         def build_layout():
             layout = [
                 [sg.Text(f"Filtre pour {col_name}", font=("Arial", 12, "bold"))],
@@ -42,10 +40,8 @@ class FilterUI:
                 ],
                 [sg.Button("Appliquer"), sg.Button("Fermer")]
             ]
-
             return layout
 
-        # --- Création du popup ---
         popup = sg.Window(
             f"Filtre {col_name}",
             build_layout(),
@@ -53,17 +49,15 @@ class FilterUI:
             keep_on_top=True,
             finalize=True,
             disable_close=True,
-            location=popup_location
+            location=popup_location,
         )
 
         changed = False
         last_position = popup_location
 
-        # --- Boucle popup ---
         while True:
             ev_p, vals_p = popup.read()
 
-            # Mise à jour position en live
             if ev_p == "-Configure-":
                 try:
                     last_position = popup.current_location()
@@ -71,17 +65,14 @@ class FilterUI:
                     pass
                 continue
 
-            # --- Fermer sans appliquer ---
             if ev_p == "Fermer":
                 popup.close()
                 return False, last_position
 
-            # --- Appliquer et fermer ---
             if ev_p == "Appliquer":
                 popup.close()
                 return changed, last_position
 
-            # --- Ajouter un filtre ---
             if ev_p == "-ADD-":
                 op = vals_p["-OP-"]
                 val = vals_p["-VAL-"]
@@ -92,17 +83,14 @@ class FilterUI:
                     changed = True
                     existing_filters = self.manager.get_filters(category)[col_name]
 
-                # On reconstruit le popup sans perdre la position
                 popup.close()
                 return self.open_filter_popup(parent_window, category, col_name, last_position)
 
-            # --- Supprimer un filtre ---
             if isinstance(ev_p, str) and ev_p.startswith("-DEL-"):
                 idx = int(ev_p.split("-")[2])
                 self.manager.filters[category][col_name].pop(idx)
                 changed = True
                 existing_filters = self.manager.get_filters(category)[col_name]
 
-                # On reconstruit le popup sans perdre la position
                 popup.close()
                 return self.open_filter_popup(parent_window, category, col_name, last_position)
