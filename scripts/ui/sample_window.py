@@ -137,7 +137,11 @@ def open_patient_window(result, saved_size=None, saved_location=None):
         ):
             row = event[2][0]
             col = event[2][1]
-
+            
+            # On ignore les clics invalides
+             if row is None or col is None:
+                continue
+                 
             # --- Ligne 0 = filtres ---
             if row == 0:
                 col_name = columns_by_cat[current_category][col]
