@@ -5,7 +5,7 @@ from scripts.ui.events_manager import EventsManager
 from scripts.ui.filter_ui import FilterUI
 
 
-def open_patient_window(result, saved_size=None, saved_location=None):
+def open_patient_window(result, saved_size=None, saved_location=None, saved_filter_position=None):
 
     sg.theme("SystemDefault")
 
@@ -151,7 +151,8 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 changed = filter_ui.open_filter_popup(
                     parent_window=window,
                     category=current_category,
-                    col_name=col_name
+                    col_name=col_name,
+                    saved_position=saved_filter_position
                 )
 
                 if changed:
@@ -217,4 +218,4 @@ def open_patient_window(result, saved_size=None, saved_location=None):
                 window["-STATUS-"].update(f"Erreur sashimi : {e}", text_color="red")
 
     window.close()
-    return saved_size, saved_location
+    return saved_size, saved_location, saved_filter_position
