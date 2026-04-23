@@ -5,7 +5,10 @@ class EventsManager:
         self.events_by_cat = events_by_cat
         self.columns_by_cat = columns_by_cat
         self.sort_states = {}
-        self.filters = {}   # {category: {col_name: [ {conditions: [...], mode: AND}, ... ]}}
+
+        # Nouveau modèle : blocs + conditions avec logique
+        self.filters = {}  
+        # {category: {col_name: [ {logic: "AND/OR", conditions: [ {op, value, logic}, ... ]}, ... ]}}
 
     # ---------------------------------------------------------
     # TABLE
@@ -73,31 +76,32 @@ class EventsManager:
         return self.build_table_values(category, ev_list)
 
     # ---------------------------------------------------------
-    # GESTION DES GROUPES DE FILTRES
+    # GESTION DES BLOCS
     # ---------------------------------------------------------
-    def add_filter_group(self, category, col_name):
+    def add_block(self, category, col_name):
         cat_filters = self.filters.setdefault(category, {})
         col_filters = cat_filters.setdefault(col_name, [])
 
         col_filters.append({
-            "conditions": [],
-            "mode": "AND"
+            "logic": "AND",        # logique entre blocs
+            "conditions": []       # liste de conditions
         })
 
-    def add_condition(self, category, col_name, group_index, op, value):
-        self.filters[category][col_name][group_index]["conditions"].append({
+    def add_condition(self, category, col_name, block_index, op, value, logic):
+        self.filters[category][col_name][block_index]["conditions"].append({
             "op": op,
-            "value": value
+            "value": value,
+            "logic": logic         # logique entre conditions
         })
 
-    def remove_condition(self, category, col_name, group_index, cond_index):
-        del self.filters[category][col_name][group_index]["conditions"][cond_index]
+    def remove_condition(self, category, col_name, block_index, cond_index):
+        del self.filters[category][col_name][block_index]["conditions"][cond_index]
 
     def get_filters(self, category):
         return self.filters.get(category, {})
 
     # ---------------------------------------------------------
-    # APPLICATION DES FILTRES (NOUVELLE VERSION)
+    # APPLICATION DES FILTRES (AND/OR partout)
     # ---------------------------------------------------------
     def apply_filters(self, category):
         evs = self.events_by_cat.get(category) or []
@@ -111,28 +115,15 @@ class EventsManager:
         for ev in evs:
             keep_event = True
 
-            for col_name, groups in cat_filters.items():
-                if not groups:
+            # AND obligatoire entre colonnes
+            for col_name, blocks in cat_filters.items():
+                if not blocks:
                     continue
 
                 ev_val = ev.get(col_name, "")
-                col_keep = True
+                col_result = self.evaluate_blocks(ev_val, blocks)
 
-                # AND entre groupes
-                for group in groups:
-                    group_match = False
-
-                    # OR internes
-                    for cond in group["conditions"]:
-                        if self.evaluate_filter(ev_val, cond):
-                            group_match = True
-                            break
-
-                    if not group_match:
-                        col_keep = False
-                        break
-
-                if not col_keep:
+                if not col_result:
                     keep_event = False
                     break
 
@@ -142,9 +133,50 @@ class EventsManager:
         return filtered
 
     # ---------------------------------------------------------
+    # ÉVALUATION DES BLOCS (AND/OR entre blocs)
+    # ---------------------------------------------------------
+    def evaluate_blocks(self, ev_val, blocks):
+        if not blocks:
+            return True
+
+        result = self.evaluate_block(ev_val, blocks[0])
+
+        for block in blocks[1:]:
+            logic = block["logic"]
+            block_result = self.evaluate_block(ev_val, block)
+
+            if logic == "AND":
+                result = result and block_result
+            else:
+                result = result or block_result
+
+        return result
+
+    # ---------------------------------------------------------
+    # ÉVALUATION D’UN BLOC (AND/OR entre conditions)
+    # ---------------------------------------------------------
+    def evaluate_block(self, ev_val, block):
+        conds = block["conditions"]
+        if not conds:
+            return True
+
+        result = self.evaluate_condition(ev_val, conds[0])
+
+        for cond in conds[1:]:
+            logic = cond["logic"]
+            cond_result = self.evaluate_condition(ev_val, cond)
+
+            if logic == "AND":
+                result = result and cond_result
+            else:
+                result = result or cond_result
+
+        return result
+
+    # ---------------------------------------------------------
     # ÉVALUATION D’UNE CONDITION
     # ---------------------------------------------------------
-    def evaluate_filter(self, ev_val, cond):
+    def evaluate_condition(self, ev_val, cond):
         op = cond["op"]
         value = cond["value"]
 
@@ -170,10 +202,9 @@ class EventsManager:
             if op == "<": return ev_num < val_num
             if op == ">=": return ev_num >= val_num
             if op == "<=": return ev_num <= val_num
-            if op == "=": return ev_num == val_num
-            if op == "!=": return ev_num != val_num
 
         except:
             return False
 
         return False
+
