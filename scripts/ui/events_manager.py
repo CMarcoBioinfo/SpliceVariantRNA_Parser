@@ -7,14 +7,23 @@ class EventsManager:
         self.sort_states = {}
         self.filters = {}
 
-    def build_table_values(self, category):
-        evs = self.events_by_cat.get(category) or []
-        cols = self.columns_by_cat.get(category) or []
+def build_table_values(self, category, ev_list=None):
+    if ev_list is None:
+        ev_list = self.events_by_cat.get(category) or []
 
-        return [
-            [ev.get(col + "_fmt", ev.get(col, "")) for col in cols]
-            for ev in evs
-        ]
+    cols = self.columns_by_cat.get(category) or []
+
+    #Ligne 0 = filtres
+    filter_row = ["[ filtre ]" for _ in cols]
+
+    # Lignes normales
+    rows = [
+        [ev.get(col + "_fmt", ev.get(col, "")) for col in cols]
+        for ev in ev_list
+    ]
+
+    return [filter_row] + rows
+
 
     def extract_details(self, category, idx):
         ev_list = self.events_by_cat.get(category) or []
@@ -78,7 +87,7 @@ class EventsManager:
         self.sort_states[sort_key] = 1 - reverse
     
         # Reconstruction des lignes (ÉTAPE 1)
-        return self.build_table_values(category)
+        return self.build_table_values(category, ev_list)
 
     def add_filter(self, category, col_name, value, mode="AND"):
         if not value:
