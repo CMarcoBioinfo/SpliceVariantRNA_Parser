@@ -106,3 +106,4 @@ class FilterUI:
                 break
 
         return changed
+
