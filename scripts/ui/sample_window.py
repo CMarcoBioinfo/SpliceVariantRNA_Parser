@@ -112,6 +112,7 @@ def open_patient_window(result, saved_size=None, saved_location=None, saved_filt
     while True:
         event, values = window.read()
 
+        # Sauvegarde dynamique de la taille/position
         if window.TKroot is not None:
             try:
                 saved_size = window.size
@@ -140,26 +141,29 @@ def open_patient_window(result, saved_size=None, saved_location=None, saved_filt
             row = event[2][0]
             col = event[2][1]
 
-            # On ignore les clics invalides
             if row is None or col is None:
                 continue
 
             # --- Ligne 0 = filtres ---
             if row == 0:
                 col_name = columns_by_cat[current_category][col]
-            
-                changed = filter_ui.open_filter_popup(
+
+                print("\n>>> sample_window.py → saved_filter_position AVANT popup =", saved_filter_position)
+
+                changed, saved_filter_position = filter_ui.open_filter_popup(
                     parent_window=window,
                     category=current_category,
                     col_name=col_name,
                     saved_position=saved_filter_position
                 )
 
+                print("<<< sample_window.py → saved_filter_position APRÈS popup =", saved_filter_position)
+
                 if changed:
                     window[f"-TABLE-{current_category}-"].update(
                         values=manager.sort_category(current_category, 0)
                     )
-            
+
                 continue
 
             # --- Tri ---
