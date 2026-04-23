@@ -147,7 +147,7 @@ def open_patient_window(result, saved_size=None, saved_location=None):
             if row == 0:
                 col_name = columns_by_cat[current_category][col]
             
-                changed = filter_ui.open_filter_popup(
+                changed = FilterUI.open_filter_popup(
                     parent_window=window,
                     category=current_category,
                     col_name=col_name
