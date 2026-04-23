@@ -6,10 +6,11 @@ class PopupManager:
         self.last_position = None
 
     def get_position(self, parent_window):
-        """Retourne la position où ouvrir le popup."""
+        """Position d'ouverture du popup."""
         if self.last_position is not None:
             return self.last_position
 
+        # Position centrée sur la fenêtre parent
         wx, wy = parent_window.current_location()
         ww, wh = parent_window.size
         return (wx + ww // 2, wy + wh // 2)
@@ -67,7 +68,7 @@ class FilterUI:
         while True:
             ev_p, vals_p = popup.read()
 
-            # 🔥 Capture la position quand la fenêtre bouge
+            # Capture la position quand la fenêtre bouge
             if ev_p == "-Configure-":
                 try:
                     self.popup_manager.last_position = popup.current_location()
@@ -83,7 +84,7 @@ class FilterUI:
             # --- Appliquer et fermer ---
             if ev_p == "Appliquer":
                 popup.close()
-                return True
+                return changed
 
             # --- Ajouter un filtre (reste ouvert) ---
             if ev_p == "-ADD-":
@@ -96,6 +97,7 @@ class FilterUI:
                     changed = True
 
                 popup.close()
+                # On rouvre pour afficher la liste mise à jour
                 return self.open_filter_popup(parent_window, category, col_name)
 
             # --- Supprimer un filtre (reste ouvert) ---
@@ -105,5 +107,6 @@ class FilterUI:
                 changed = True
 
                 popup.close()
+                # On rouvre pour afficher la liste mise à jour
                 return self.open_filter_popup(parent_window, category, col_name)
 
