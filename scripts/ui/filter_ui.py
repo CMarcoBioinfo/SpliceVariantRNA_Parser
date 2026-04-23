@@ -6,6 +6,7 @@ class PopupManager:
         self.last_position = None
 
     def get_position(self, parent_window):
+        """Retourne la position où ouvrir le popup."""
         if self.last_position is not None:
             return self.last_position
 
@@ -20,23 +21,13 @@ class FilterUI:
         self.manager = events_manager
         self.popup_manager = PopupManager()
 
-    def _close_and_save(self, popup):
-        """Force Tkinter à mettre à jour la position avant fermeture."""
-        popup.refresh()
-        popup.read(timeout=10)
-
-        # Lire la position AVANT fermeture
-        try:
-            self.popup_manager.last_position = popup.current_location()
-        except:
-            pass
-
-        popup.close()
-
     def open_filter_popup(self, parent_window, category, col_name):
+        """Ouvre le popup de filtre et renvoie True si la table doit être rafraîchie."""
+
         existing_filters = self.manager.get_filters(category).get(col_name, [])
         ops = ["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="]
 
+        # --- Construction du layout ---
         layout_popup = [
             [sg.Text(f"Filtre pour {col_name}", font=("Arial", 12, "bold"))],
             [sg.Text("Opérateur :"), sg.Combo(ops, default_value="contains", key="-OP-")],
@@ -56,27 +47,45 @@ class FilterUI:
                 sg.Radio("AND", "MODE", default=True, key="-MODE-AND-"),
                 sg.Radio("OR", "MODE", default=False, key="-MODE-OR-")
             ],
-            [sg.Button("OK"), sg.Button("Annuler")]
+            [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
 
+        # --- Création du popup ---
         popup = sg.Window(
             f"Filtre {col_name}",
             layout_popup,
             modal=True,
             keep_on_top=True,
             finalize=True,
+            disable_close=True,  # ❗ empêche la croix
             location=self.popup_manager.get_position(parent_window)
         )
 
         changed = False
 
+        # --- Boucle popup ---
         while True:
             ev_p, vals_p = popup.read()
 
-            if ev_p in (sg.WIN_CLOSED, "Annuler"):
-                self._close_and_save(popup)
-                break
+            # 🔥 Capture la position quand la fenêtre bouge
+            if ev_p == "-Configure-":
+                try:
+                    self.popup_manager.last_position = popup.current_location()
+                except:
+                    pass
+                continue
 
+            # --- Fermer sans appliquer ---
+            if ev_p == "Fermer":
+                popup.close()
+                return False
+
+            # --- Appliquer et fermer ---
+            if ev_p == "Appliquer":
+                popup.close()
+                return True
+
+            # --- Ajouter un filtre (reste ouvert) ---
             if ev_p == "-ADD-":
                 op = vals_p["-OP-"]
                 val = vals_p["-VAL-"]
@@ -86,19 +95,15 @@ class FilterUI:
                     self.manager.add_filter(category, col_name, val, op=op, mode=mode)
                     changed = True
 
-                self._close_and_save(popup)
-                break
+                popup.close()
+                return self.open_filter_popup(parent_window, category, col_name)
 
+            # --- Supprimer un filtre (reste ouvert) ---
             if isinstance(ev_p, str) and ev_p.startswith("-DEL-"):
                 idx = int(ev_p.split("-")[2])
                 self.manager.filters[category][col_name].pop(idx)
                 changed = True
 
-                self._close_and_save(popup)
-                break
+                popup.close()
+                return self.open_filter_popup(parent_window, category, col_name)
 
-            if ev_p == "OK":
-                self._close_and_save(popup)
-                break
-
-        return changed
