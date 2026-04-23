@@ -7,6 +7,8 @@ class FilterUI:
     def open_filter_popup(self, parent_window, category, col_name, saved_position=None):
         """Retourne (changed, new_position)."""
 
+        print("\n>>> filter_ui.py → saved_position reçu =", saved_position)
+
         existing_filters = self.manager.get_filters(category).get(col_name, [])
         ops = ["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="]
 
@@ -17,6 +19,8 @@ class FilterUI:
             wx, wy = parent_window.current_location()
             ww, wh = parent_window.size
             popup_location = (wx + ww // 2, wy + wh // 2)
+
+        print(">>> filter_ui.py → popup_location utilisé =", popup_location)
 
         def build_layout():
             layout = [
@@ -67,10 +71,12 @@ class FilterUI:
 
             if ev_p == "Fermer":
                 popup.close()
+                print("<<< filter_ui.py → return (False,", last_position, ")")
                 return False, last_position
 
             if ev_p == "Appliquer":
                 popup.close()
+                print("<<< filter_ui.py → return (", changed, ",", last_position, ")")
                 return changed, last_position
 
             if ev_p == "-ADD-":
@@ -84,6 +90,7 @@ class FilterUI:
                     existing_filters = self.manager.get_filters(category)[col_name]
 
                 popup.close()
+                print("<<< filter_ui.py → reconstruction popup, position =", last_position)
                 return self.open_filter_popup(parent_window, category, col_name, last_position)
 
             if isinstance(ev_p, str) and ev_p.startswith("-DEL-"):
@@ -93,4 +100,5 @@ class FilterUI:
                 existing_filters = self.manager.get_filters(category)[col_name]
 
                 popup.close()
+                print("<<< filter_ui.py → reconstruction popup, position =", last_position)
                 return self.open_filter_popup(parent_window, category, col_name, last_position)
