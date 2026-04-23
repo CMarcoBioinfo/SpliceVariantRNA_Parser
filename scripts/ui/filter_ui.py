@@ -1,49 +1,54 @@
 import PySimpleGUI as sg
 
 class FilterUI:
-    def __init__(self, events_manager):
-        self.manager = events_manager
+    def __init__(self, manager):
+        self.manager = manager
 
     def open_filter_popup(self, parent_window, category, col_name, saved_position=None):
-        """Popup dynamique : ne se ferme pas lors de ADD/DEL."""
 
         # --- Position d'ouverture ---
-        if saved_position is not None:
+        if saved_position:
             popup_location = saved_position
         else:
             wx, wy = parent_window.current_location()
             ww, wh = parent_window.size
             popup_location = (wx + ww // 2, wy + wh // 2)
 
-        # --- Fonction pour formater les filtres ---
-        def format_filters():
-            lst = []
-            for f in self.manager.get_filters(category).get(col_name, []):
-                bullet = "•" if f["mode"] == "AND" else "○"
-                lst.append(f'{bullet} {f["op"]} "{f["value"]}" ({f["mode"]})')
-            return lst
+        # --- Fonction pour reconstruire le layout dynamique ---
+        def build_filters_layout():
+            layout = []
 
-        # --- Layout dynamique ---
+            filters = self.manager.get_filters(category).get(col_name, [])
+
+            for g_idx, group in enumerate(filters):
+                layout.append([sg.Text(f"Groupe {g_idx+1} (OR)", font=("Arial", 11, "bold"))])
+
+                for c_idx, cond in enumerate(group["conditions"]):
+                    layout.append([
+                        sg.Combo(
+                            ["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="],
+                            default_value=cond["op"],
+                            key=f"-OP-{g_idx}-{c_idx}-",
+                            size=(10,1)
+                        ),
+                        sg.Input(cond["value"], key=f"-VAL-{g_idx}-{c_idx}-", size=(20,1)),
+                        sg.Button("❌", key=f"-DEL-COND-{g_idx}-{c_idx}-")
+                    ])
+
+                layout.append([
+                    sg.Button("+ Ajouter OR", key=f"-ADD-OR-{g_idx}-")
+                ])
+
+                layout.append([sg.HorizontalSeparator()])
+
+            layout.append([sg.Button("+ Ajouter un groupe AND", key="-ADD-GROUP-")])
+
+            return layout
+
+        # --- Layout principal ---
         layout = [
-            [sg.Text(f"Filtre pour {col_name}", font=("Arial", 12, "bold"))],
-            [sg.Text("Opérateur :"), sg.Combo(
-                ["contains", "startswith", "endswith", "=", "!=", ">", "<", ">=", "<="],
-                default_value="contains",
-                key="-OP-"
-            )],
-            [sg.Text("Valeur :"), sg.Input(key="-VAL-")],
-            [sg.Button("+ Ajouter", key="-ADD-")],
-
-            [sg.Text("Filtres actifs :")],
-            [sg.Listbox(values=format_filters(), key="-FILTERS-", size=(40, 6))],
-            [sg.Button("Supprimer", key="-DEL-")],
-
-            [sg.Text("Mode entre filtres :")],
-            [
-                sg.Radio("AND", "MODE", default=True, key="-MODE-AND-"),
-                sg.Radio("OR", "MODE", default=False, key="-MODE-OR-")
-            ],
-
+            [sg.Text(f"Filtres pour {col_name}", font=("Arial", 12, "bold"))],
+            [sg.Column(build_filters_layout(), key="-FILTERS-COL-", scrollable=True, vertical_scroll_only=True, size=(450, 300))],
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
 
@@ -54,50 +59,51 @@ class FilterUI:
             keep_on_top=True,
             finalize=True,
             disable_close=True,
-            location=popup_location
+            location=popup_location,
+            resizable=True
         )
 
-        changed = False
         last_position = popup_location
+        changed = False
 
         # --- Boucle popup ---
         while True:
             ev, vals = popup.read()
 
-            # Sauvegarde dynamique de la position (méthode sample_window)
-            if popup.TKroot is not None:
+            # Sauvegarde position
+            if popup.TKroot:
                 try:
                     last_position = popup.current_location()
                 except:
                     pass
 
-            # Fermer
-            if ev == "Fermer":
+            if ev in (sg.WIN_CLOSED, "Fermer"):
                 popup.close()
                 return False, last_position
 
-            # Appliquer
             if ev == "Appliquer":
                 popup.close()
                 return changed, last_position
 
-            # Ajouter un filtre
-            if ev == "-ADD-":
-                op = vals["-OP-"]
-                val = vals["-VAL-"]
-                mode = "AND" if vals["-MODE-AND-"] else "OR"
+            # --- Ajouter un groupe AND ---
+            if ev == "-ADD-GROUP-":
+                self.manager.add_filter_group(category, col_name)
+                popup["-FILTERS-COL-"].update(build_filters_layout())
+                changed = True
 
-                if val:
-                    self.manager.add_filter(category, col_name, val, op=op, mode=mode)
-                    popup["-FILTERS-"].update(values=format_filters())
-                    changed = True
+            # --- Ajouter une condition OR ---
+            if ev.startswith("-ADD-OR-"):
+                g_idx = int(ev.split("-")[3])
+                self.manager.add_condition(category, col_name, g_idx, op="contains", value="")
+                popup["-FILTERS-COL-"].update(build_filters_layout())
+                changed = True
 
-            # Supprimer un filtre
-            if ev == "-DEL-":
-                selected = vals["-FILTERS-"]
-                if selected:
-                    filters = format_filters()
-                    idx = filters.index(selected[0])
-                    self.manager.filters[category][col_name].pop(idx)
-                    popup["-FILTERS-"].update(values=format_filters())
-                    changed = True
+            # --- Supprimer une condition ---
+            if ev.startswith("-DEL-COND-"):
+                _, _, g_idx, c_idx, _ = ev.split("-")
+                g_idx = int(g_idx)
+                c_idx = int(c_idx)
+
+                self.manager.remove_condition(category, col_name, g_idx, c_idx)
+                popup["-FILTERS-COL-"].update(build_filters_layout())
+                changed = True
