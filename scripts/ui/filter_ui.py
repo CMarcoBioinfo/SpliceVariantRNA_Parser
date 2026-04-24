@@ -393,25 +393,48 @@ class FilterUI:
             # ENREGISTRER FILTRE
             # ---------------------------------------------------------
             if ev == "-SAVE-FILTER-":
-                name = sg.popup_get_text("Nom du filtre :", default_text="")
-                if not name:
-                    continue
             
-                scope = sg.popup_yes_no("Enregistrer comme filtre PERSONNEL ?\n"
-                                        "(Non = filtre GLOBAL)")
-                scope = "personal" if scope == "Yes" else "global"
+                layout_save = [
+                    [sg.Text("Nom du filtre :")],
+                    [sg.Input(key="-SAVE-NAME-")],
             
-                # Nettoyage des blocs vides
-                cleaned = [b for b in working_copy if len(b["conditions"]) > 0]
+                    [sg.Text("Scope :")],
+                    [
+                        sg.Radio("Personnel", "SCOPE_SAVE", key="-SAVE-PERSO-", default=True),
+                        sg.Radio("Global", "SCOPE_SAVE", key="-SAVE-GLOBAL-")
+                    ],
             
-                self.storage.save_column_filter(
-                    column=col_name,
-                    name=name,
-                    blocks=cleaned,
-                    scope=scope
-                )
+                    [sg.Push(), sg.Button("OK"), sg.Button("Annuler")]
+                ]
             
-                sg.popup_ok("Filtre enregistré.")
+                win = sg.Window("Enregistrer filtre", layout_save, modal=True, keep_on_top=True)
+            
+                while True:
+                    ev2, vals2 = win.read()
+                    if ev2 in (sg.WIN_CLOSED, "Annuler"):
+                        win.close()
+                        break
+            
+                    if ev2 == "OK":
+                        name = vals2["-SAVE-NAME-"]
+                        if not name:
+                            sg.popup_ok("Nom invalide.")
+                            continue
+            
+                        scope = "personal" if vals2["-SAVE-PERSO-"] else "global"
+            
+                        cleaned = [b for b in working_copy if len(b["conditions"]) > 0]
+            
+                        self.storage.save_column_filter(
+                            column=col_name,
+                            name=name,
+                            blocks=cleaned,
+                            scope=scope
+                        )
+            
+                        win.close()
+                        sg.popup_ok("Filtre enregistré.")
+                        break
 
 
             # ---------------------------------------------------------
@@ -419,10 +442,26 @@ class FilterUI:
             # ---------------------------------------------------------
             if ev == "-LOAD-FILTER-":
             
-                scope = sg.popup_yes_no("Charger un filtre PERSONNEL ?\n"
-                                        "(Non = filtre GLOBAL)")
-                scope = "personal" if scope == "Yes" else "global"
+                # Popup pour choisir scope
+                layout_scope = [
+                    [sg.Text("Charger un filtre :")],
+                    [
+                        sg.Radio("Personnel", "SCOPE_LOAD", key="-LOAD-PERSO-", default=True),
+                        sg.Radio("Global", "SCOPE_LOAD", key="-LOAD-GLOBAL-")
+                    ],
+                    [sg.Button("Suivant"), sg.Button("Annuler")]
+                ]
             
+                win1 = sg.Window("Choisir scope", layout_scope, modal=True, keep_on_top=True)
+                ev2, vals2 = win1.read()
+                if ev2 in (sg.WIN_CLOSED, "Annuler"):
+                    win1.close()
+                    continue
+            
+                scope = "personal" if vals2["-LOAD-PERSO-"] else "global"
+                win1.close()
+            
+                # Liste des filtres disponibles
                 names = self.storage.list_filters(
                     scope=scope,
                     filter_type="column",
@@ -433,21 +472,40 @@ class FilterUI:
                     sg.popup_ok("Aucun filtre trouvé.")
                     continue
             
-                name = sg.popup_get_text(
-                    "Nom du filtre à charger :\n" + "\n".join(names)
-                )
-                if not name:
-                    continue
+                # Popup liste déroulante
+                layout_load = [
+                    [sg.Text("Sélectionner un filtre :")],
+                    [sg.Combo(names, key="-LOAD-NAME-", readonly=True, size=(25,1))],
+                    [sg.Push(), sg.Button("Charger"), sg.Button("Annuler")]
+                ]
             
-                loaded = self.storage.load_column_filter(name, scope)
-                if not loaded:
-                    sg.popup_ok("Erreur : filtre introuvable.")
-                    continue
+                win2 = sg.Window("Charger filtre", layout_load, modal=True, keep_on_top=True)
             
-                _, blocks = loaded
-                working_copy = copy.deepcopy(blocks)
+                while True:
+                    ev3, vals3 = win2.read()
+                    if ev3 in (sg.WIN_CLOSED, "Annuler"):
+                        win2.close()
+                        break
             
-                popup["-LIST-"].update(values=format_blocks())
-                popup["-PREVIEW-"].update(format_preview())
+                    if ev3 == "Charger":
+                        name = vals3["-LOAD-NAME-"]
+                        if not name:
+                            sg.popup_ok("Aucun filtre sélectionné.")
+                            continue
+            
+                        loaded = self.storage.load_column_filter(name, scope)
+                        if not loaded:
+                            sg.popup_ok("Erreur : filtre introuvable.")
+                            continue
+            
+                        _, blocks = loaded
+                        working_copy = copy.deepcopy(blocks)
+            
+                        popup["-LIST-"].update(values=format_blocks())
+                        popup["-PREVIEW-"].update(format_preview())
+            
+                        win2.close()
+                        break
+
 
 
