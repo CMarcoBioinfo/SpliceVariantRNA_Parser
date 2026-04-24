@@ -156,26 +156,50 @@ class FilterUI:
             [sg.Text("Filtres détaillés :")],
             [sg.Listbox(values=format_blocks(), key="-LIST-", size=(80,12), enable_events=True)],
 
-            [sg.Button("Supprimer", key="-DEL-"),
-             sg.Button("Changer logique", key="-TOGGLE-LOGIC-"),
-             sg.Button("Effacer tout", key="-CLEAR-")],
-
+            # ---------------------------------------------------------
+            # Cadre : Actions du filtre
+            # ---------------------------------------------------------
             [
                 sg.Frame(
-                    "Filter :",
+                    "Actions du filtre",
                     [
-                        [sg.Button("Enregistrer", key="-SAVE-FILTER-", size=(15,1))],
-                        [sg.Button("Charger", key="-LOAD-FILTER-", size=(15,1))]
+                        [
+                            sg.Button("Supprimer", key="-DEL-", size=(12,1)),
+                            sg.Button("Changer logique", key="-TOGGLE-LOGIC-", size=(14,1)),
+                            sg.Button("Effacer tout", key="-CLEAR-", size=(12,1))
+                        ]
                     ],
                     relief=sg.RELIEF_GROOVE,
-                    element_justification="center",
-                    vertical_alignment="top",
                     pad=((0,0),(10,10))
                 )
             ],
+            
+            # ---------------------------------------------------------
+            # Cadre : Gestion des filtres
+            # ---------------------------------------------------------
+            [
+                sg.Frame(
+                    "Gestion des filtres",
+                    [
+                        [
+                            sg.Button("Enregistrer", key="-SAVE-FILTER-", size=(12,1)),
+                            sg.Button("Charger", key="-LOAD-FILTER-", size=(12,1))
+                        ]
+                    ],
+                    relief=sg.RELIEF_GROOVE,
+                    pad=((0,0),(10,10))
+                )
+            ],
+            
+            # ---------------------------------------------------------
+            # Boutons finaux
+            # ---------------------------------------------------------
+            [
+                sg.Button("Appliquer", size=(12,1)),
+                sg.Push(),  # pousse Fermer à droite
+                sg.Button("Fermer", size=(12,1))
+            ]
 
-            [sg.Button("Appliquer"), sg.Button("Fermer")]
-        ]
 
         # ---------------------------------------------------------
         # Création de la popup
