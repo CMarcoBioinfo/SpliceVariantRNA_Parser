@@ -29,7 +29,7 @@ class FilterUI:
                 if b_idx == 0:
                     out.append(f"[Bloc {b_idx+1}]")
                 else:
-                    out.append(f"[Bloc {b_idx+1} — logique: {block['logic']}]")
+                    out.append(f"[Bloc {b_idx+1} - {block['logic']}]")
 
                 # Conditions
                 for c_idx, cond in enumerate(block["conditions"]):
