@@ -43,7 +43,7 @@ class FilterUI:
             return out
 
         # ---------------------------------------------------------
-        # Formatage du filtre actif (prévisualisation)
+        # Prévisualisation dynamique
         # ---------------------------------------------------------
         def format_preview():
             blocks = self.manager.get_filters(category).get(col_name, [])
@@ -74,6 +74,16 @@ class FilterUI:
             return " ".join(parts)
 
         # ---------------------------------------------------------
+        # Filtre actif (appliqué)
+        # ---------------------------------------------------------
+        def format_active():
+            blocks = self.manager.get_filters(category).get(col_name, [])
+            if not blocks:
+                return "Aucun filtre appliqué"
+
+            return format_preview()
+
+        # ---------------------------------------------------------
         # Layout principal
         # ---------------------------------------------------------
         layout = [
@@ -89,7 +99,7 @@ class FilterUI:
 
             [sg.Text("Valeur :"), sg.Input(key="-VAL-", size=(20,1))],
 
-            [sg.Text("Logique avec la suivante :"),
+            [sg.Text("Opérateur logique :"),
              sg.Radio("AND", "CONDLOG", default=True, key="-COND-AND-"),
              sg.Radio("OR", "CONDLOG", default=False, key="-COND-OR-")],
 
@@ -97,15 +107,17 @@ class FilterUI:
              sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
             [sg.Frame("Prévisualisation du filtre", [
-                [sg.Text("", key="-PREVIEW-", text_color="yellow", size=(60, 3))]
+                [sg.Text("", key="-PREVIEW-", text_color="#00e5ff", size=(60, 3))]
             ], relief=sg.RELIEF_SUNKEN)],
+
+            [sg.Text("Filtre actif (appliqué) :")],
+            [sg.Text("", key="-ACTIVE-", text_color="#00e5ff")],
 
             [sg.Text("Filtres détaillés :")],
             [sg.Listbox(values=format_blocks(), key="-LIST-", size=(50,12), enable_events=True)],
 
-            [sg.Button("Supprimer condition", key="-DEL-"),
-             sg.Button("Supprimer bloc", key="-DEL-BLOCK-"),
-             sg.Button("Changer logique du bloc", key="-TOGGLE-BLOCK-")],
+            [sg.Button("Supprimer", key="-DEL-"),
+             sg.Button("Changer logique", key="-TOGGLE-BLOCK-")],
 
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
@@ -121,6 +133,7 @@ class FilterUI:
         )
 
         popup["-PREVIEW-"].update(format_preview())
+        popup["-ACTIVE-"].update(format_active())
 
         changed = False
         last_position = popup_location
@@ -156,7 +169,6 @@ class FilterUI:
                 if cleaned:
                     self.manager.filters[category][col_name] = cleaned
                 else:
-                    # Plus aucun bloc → supprimer complètement la colonne
                     if col_name in self.manager.filters.get(category, {}):
                         del self.manager.filters[category][col_name]
 
@@ -193,9 +205,10 @@ class FilterUI:
             # Ajouter un bloc
             if ev == "-ADD-BLOCK-":
                 self.manager.add_block(category, col_name)
+                changed = True
+
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
-                changed = True
 
             # Ajouter une condition
             if ev == "-ADD-COND-":
@@ -225,24 +238,19 @@ class FilterUI:
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
 
-            # Supprimer une condition
+            # Supprimer (condition ou bloc)
             if ev == "-DEL-":
                 if selected_block is not None and selected_condition is not None:
                     self.manager.remove_condition(category, col_name, selected_block, selected_condition)
                     changed = True
-                    popup["-LIST-"].update(values=format_blocks())
-                    popup["-PREVIEW-"].update(format_preview())
 
-            # Supprimer un bloc entier
-            if ev == "-DEL-BLOCK-":
-                if selected_block is not None:
+                elif selected_block is not None:
                     blocks = self.manager.get_filters(category).get(col_name, [])
                     del blocks[selected_block]
                     changed = True
-                    popup["-LIST-"].update(values=format_blocks())
-                    popup["-PREVIEW-"].update(format_preview())
-                    selected_block = None
-                    selected_condition = None
+
+                popup["-LIST-"].update(values=format_blocks())
+                popup["-PREVIEW-"].update(format_preview())
 
             # Changer logique du bloc
             if ev == "-TOGGLE-BLOCK-":
@@ -251,6 +259,6 @@ class FilterUI:
                     block = blocks[selected_block]
                     block["logic"] = "OR" if block["logic"] == "AND" else "AND"
                     changed = True
-                    popup["-LIST-"].update(values=format_blocks())
-                    popup["-PREVIEW-"].update(format_preview())
 
+                popup["-LIST-"].update(values=format_blocks())
+                popup["-PREVIEW-"].update(format_preview())
