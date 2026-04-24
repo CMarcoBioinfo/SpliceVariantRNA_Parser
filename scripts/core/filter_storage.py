@@ -2,7 +2,6 @@ import os
 import json
 import sys
 from pathlib import Path
-import platform
 
 
 class FilterStorageManager:
