@@ -18,7 +18,7 @@ class FilterStorageManager:
         self.personal_dir = self._get_personal_dir()
 
         # Dossiers globaux (dans le dossier de l'exécutable)
-        self.global_dir = Path(os.getcwd()) / f"filters_global_{app_name}"
+        self.global_dir = Path(__file__).resolve().parent / f"filters_global_{app_name}"
 
         # Création des dossiers
         self.personal_dir.mkdir(parents=True, exist_ok=True)
