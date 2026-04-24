@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+import copy
 
 class FilterUI:
     def __init__(self, manager):
@@ -17,11 +18,18 @@ class FilterUI:
             popup_location = (wx + ww // 2, wy + wh // 2)
 
         # ---------------------------------------------------------
+        # COPIE DE TRAVAIL (working_copy)
+        # ---------------------------------------------------------
+        working_copy = copy.deepcopy(
+            self.manager.get_filters(category).get(col_name, [])
+        )
+
+        # ---------------------------------------------------------
         # Formatage texte pour la Listbox
         # ---------------------------------------------------------
         def format_blocks():
             out = []
-            blocks = self.manager.get_filters(category).get(col_name, [])
+            blocks = working_copy
 
             for b_idx, block in enumerate(blocks):
 
@@ -43,10 +51,10 @@ class FilterUI:
             return out
 
         # ---------------------------------------------------------
-        # Prévisualisation dynamique
+        # Prévisualisation dynamique (basée sur working_copy)
         # ---------------------------------------------------------
         def format_preview():
-            blocks = self.manager.get_filters(category).get(col_name, [])
+            blocks = working_copy
             if not blocks:
                 return "Aucun filtre"
 
@@ -74,13 +82,35 @@ class FilterUI:
             return " ".join(parts)
 
         # ---------------------------------------------------------
-        # Filtre actif (appliqué)
+        # Filtre actif (basé sur manager, pas working_copy)
         # ---------------------------------------------------------
         def format_active():
             blocks = self.manager.get_filters(category).get(col_name, [])
             if not blocks:
                 return "Aucun filtre appliqué"
-            return format_preview()
+
+            # On réutilise format_preview mais sur les blocs actifs
+            parts = []
+            for b_idx, block in enumerate(blocks):
+                conds = block["conditions"]
+                if not conds:
+                    continue
+
+                cond_parts = []
+                for c_idx, cond in enumerate(conds):
+                    if c_idx == 0:
+                        cond_parts.append(f'{cond["op"]} "{cond["value"]}"')
+                    else:
+                        cond_parts.append(f'{cond["logic"]} {cond["op"]} "{cond["value"]}"')
+
+                block_expr = "(" + " ".join(cond_parts) + ")"
+
+                if b_idx == 0:
+                    parts.append(block_expr)
+                else:
+                    parts.append(f'{block["logic"]} {block_expr}')
+
+            return " ".join(parts)
 
         # ---------------------------------------------------------
         # Layout principal
@@ -175,26 +205,28 @@ class FilterUI:
                 except:
                     pass
 
-            # Fermer
+            # Fermer → ne rien appliquer
             if ev in (sg.WIN_CLOSED, "Fermer"):
                 popup.close()
                 return False, last_position
 
-            # Appliquer
+            # Appliquer → on copie working_copy dans manager
             if ev == "Appliquer":
 
                 # Nettoyage automatique des blocs vides
-                blocks = self.manager.get_filters(category).get(col_name, [])
-                cleaned = [b for b in blocks if len(b["conditions"]) > 0]
+                cleaned = [b for b in working_copy if len(b["conditions"]) > 0]
 
                 if cleaned:
+                    if category not in self.manager.filters:
+                        self.manager.filters[category] = {}
                     self.manager.filters[category][col_name] = cleaned
                 else:
+                    # Aucun filtre → suppression
                     if col_name in self.manager.filters.get(category, {}):
                         del self.manager.filters[category][col_name]
 
                 popup.close()
-                return changed, last_position
+                return True, last_position
 
             # Sélection dans la Listbox
             if ev == "-LIST-":
@@ -204,17 +236,14 @@ class FilterUI:
 
                 if selected:
                     line = selected[0]
-                    blocks = self.manager.get_filters(category).get(col_name, [])
 
-                    # Bloc ?
-                    for b_idx, block in enumerate(blocks):
+                    for b_idx, block in enumerate(working_copy):
                         if f"[Bloc {b_idx+1}" in line:
                             selected_block = b_idx
                             break
 
-                    # Condition ?
                     if selected_block is None:
-                        for b_idx, block in enumerate(blocks):
+                        for b_idx, block in enumerate(working_copy):
                             for c_idx, cond in enumerate(block["conditions"]):
                                 txt1 = f'   • {cond["op"]} "{cond["value"]}"'
                                 txt2 = f'   • ({cond["logic"]}) {cond["op"]} "{cond["value"]}"'
@@ -226,7 +255,7 @@ class FilterUI:
             # Ajouter un bloc
             if ev == "-ADD-BLOCK-":
                 logic = "AND" if vals["-COND-AND-"] else "OR"
-                self.manager.add_block(category, col_name, logic)
+                working_copy.append({"logic": logic, "conditions": []})
                 changed = True
 
                 popup["-LIST-"].update(values=format_blocks())
@@ -239,38 +268,37 @@ class FilterUI:
                 logic = "AND" if vals["-COND-AND-"] else "OR"
 
                 if val:
-                    blocks = self.manager.get_filters(category).get(col_name, [])
 
-                    # Si aucun bloc → en créer un automatiquement
-                    if not blocks:
-                        self.manager.add_block(category, col_name, logic)
-                        blocks = self.manager.get_filters(category).get(col_name, [])
+                    if not working_copy:
+                        working_copy.append({"logic": "AND", "conditions": []})
 
-                    # Ajouter dans le bloc sélectionné
                     if selected_block is not None:
                         b_idx = selected_block
                     else:
-                        b_idx = len(blocks) - 1
+                        b_idx = len(working_copy) - 1
 
-                    # Première condition → pas de logique
-                    if len(blocks[b_idx]["conditions"]) == 0:
+                    if len(working_copy[b_idx]["conditions"]) == 0:
                         logic = None
 
-                    self.manager.add_condition(category, col_name, b_idx, op, val, logic)
+                    working_copy[b_idx]["conditions"].append({
+                        "op": op,
+                        "value": val,
+                        "logic": logic
+                    })
+
                     changed = True
 
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
 
-            # Supprimer (condition ou bloc)
+            # Supprimer
             if ev == "-DEL-":
                 if selected_block is not None and selected_condition is not None:
-                    self.manager.remove_condition(category, col_name, selected_block, selected_condition)
+                    del working_copy[selected_block]["conditions"][selected_condition]
                     changed = True
 
                 elif selected_block is not None:
-                    blocks = self.manager.get_filters(category).get(col_name, [])
-                    del blocks[selected_block]
+                    del working_copy[selected_block]
                     changed = True
 
                 popup["-LIST-"].update(values=format_blocks())
@@ -278,33 +306,22 @@ class FilterUI:
 
             # Effacer tout
             if ev == "-CLEAR-":
-
-                # S'assurer que la structure existe
-                if category not in self.manager.filters:
-                    self.manager.filters[category] = {}
-
-                self.manager.filters[category][col_name] = []
-
+                working_copy = []
                 popup["-LIST-"].update(values=[])
                 popup["-PREVIEW-"].update("Aucun filtre")
-
                 changed = True
 
-            # Changer logique (bloc OU conditions)
+            # Changer logique
             if ev == "-TOGGLE-LOGIC-":
 
-                blocks = self.manager.get_filters(category).get(col_name, [])
-
-                # 1) Condition sélectionnée → changer sa logique
                 if selected_block is not None and selected_condition is not None:
-                    if selected_condition != 0:  # pas la première condition
-                        cond = blocks[selected_block]["conditions"][selected_condition]
+                    if selected_condition != 0:
+                        cond = working_copy[selected_block]["conditions"][selected_condition]
                         cond["logic"] = "OR" if cond["logic"] == "AND" else "AND"
                         changed = True
 
-                # 2) Bloc sélectionné → changer logique du bloc
                 elif selected_block is not None and selected_block != 0:
-                    block = blocks[selected_block]
+                    block = working_copy[selected_block]
                     block["logic"] = "OR" if block["logic"] == "AND" else "AND"
                     changed = True
 
