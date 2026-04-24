@@ -2,8 +2,9 @@ import PySimpleGUI as sg
 import copy
 
 class FilterUI:
-    def __init__(self, manager):
+    def __init__(self, manager, storage):
         self.manager = manager
+        self.storage = storage
 
     def open_filter_popup(self, parent_window, category, col_name, saved_position=None):
 
@@ -158,6 +159,12 @@ class FilterUI:
             [sg.Button("Supprimer", key="-DEL-"),
              sg.Button("Changer logique", key="-TOGGLE-LOGIC-"),
              sg.Button("Effacer tout", key="-CLEAR-")],
+
+            [
+                sg.Text("Filter :"),
+                sg.Button("Enregistrer filtre", key="-SAVE-FILTER-"),
+                sg.Button("Charger filtre", key="-LOAD-FILTER-")
+            ],
 
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
@@ -348,3 +355,66 @@ class FilterUI:
 
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
+
+            # ---------------------------------------------------------
+            # ENREGISTRER FILTRE
+            # ---------------------------------------------------------
+            if ev == "-SAVE-FILTER-":
+                name = sg.popup_get_text("Nom du filtre :", default_text="")
+                if not name:
+                    continue
+            
+                scope = sg.popup_yes_no("Enregistrer comme filtre PERSONNEL ?\n"
+                                        "(Non = filtre GLOBAL)")
+                scope = "personal" if scope == "Yes" else "global"
+            
+                # Nettoyage des blocs vides
+                cleaned = [b for b in working_copy if len(b["conditions"]) > 0]
+            
+                self.storage.save_column_filter(
+                    column=col_name,
+                    name=name,
+                    blocks=cleaned,
+                    scope=scope
+                )
+            
+                sg.popup_ok("Filtre enregistré.")
+
+
+            # ---------------------------------------------------------
+            # CHARGER FILTRE
+            # ---------------------------------------------------------
+            if ev == "-LOAD-FILTER-":
+            
+                scope = sg.popup_yes_no("Charger un filtre PERSONNEL ?\n"
+                                        "(Non = filtre GLOBAL)")
+                scope = "personal" if scope == "Yes" else "global"
+            
+                names = self.storage.list_filters(
+                    scope=scope,
+                    filter_type="column",
+                    column=col_name
+                )
+            
+                if not names:
+                    sg.popup_ok("Aucun filtre trouvé.")
+                    continue
+            
+                name = sg.popup_get_text(
+                    "Nom du filtre à charger :\n" + "\n".join(names)
+                )
+                if not name:
+                    continue
+            
+                loaded = self.storage.load_column_filter(name, scope)
+                if not loaded:
+                    sg.popup_ok("Erreur : filtre introuvable.")
+                    continue
+            
+                _, blocks = loaded
+                working_copy = copy.deepcopy(blocks)
+            
+                popup["-LIST-"].update(values=format_blocks())
+                popup["-PREVIEW-"].update(format_preview())
+
+
