@@ -161,9 +161,17 @@ class FilterUI:
              sg.Button("Effacer tout", key="-CLEAR-")],
 
             [
-                sg.Text("Filter :"),
-                sg.Button("Enregistrer filtre", key="-SAVE-FILTER-"),
-                sg.Button("Charger filtre", key="-LOAD-FILTER-")
+                sg.Frame(
+                    "Filter :",
+                    [
+                        [sg.Button("Enregistrer", key="-SAVE-FILTER-", size=(15,1))],
+                        [sg.Button("Charger", key="-LOAD-FILTER-", size=(15,1))]
+                    ],
+                    relief=sg.RELIEF_GROOVE,
+                    element_justification="center",
+                    vertical_alignment="top",
+                    pad=((0,0),(10,10))
+                )
             ],
 
             [sg.Button("Appliquer"), sg.Button("Fermer")]
