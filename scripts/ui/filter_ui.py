@@ -105,19 +105,38 @@ class FilterUI:
             [sg.Button("+ Ajouter condition", key="-ADD-COND-"),
              sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
+            # Prévisualisation
             [sg.Frame("Prévisualisation du filtre", [
-                [sg.Text("", key="-PREVIEW-", size=(60, 3))]
+                [sg.Multiline(
+                    "",
+                    key="-PREVIEW-",
+                    size=(80, 4),
+                    disabled=True,
+                    autoscroll=False,
+                    no_scrollbar=True,
+                    border_width=0
+                )]
             ], relief=sg.RELIEF_SUNKEN)],
 
-            [sg.Text("Filtre actif (appliqué) :")],
-            [sg.Text("", key="-ACTIVE-")],
+            # Filtre actif
+            [sg.Frame("Filtre actif (appliqué)", [
+                [sg.Multiline(
+                    "",
+                    key="-ACTIVE-",
+                    size=(80, 3),
+                    disabled=True,
+                    autoscroll=False,
+                    no_scrollbar=True,
+                    border_width=0
+                )]
+            ], relief=sg.RELIEF_SUNKEN)],
 
             [sg.Text("Filtres détaillés :")],
             [sg.Listbox(values=format_blocks(), key="-LIST-", size=(80,12), enable_events=True)],
 
             [sg.Button("Supprimer", key="-DEL-"),
              sg.Button("Changer logique", key="-TOGGLE-LOGIC-"),
-             sg.Button("Effacer filtre", key="-CLEAR-")],
+             sg.Button("Effacer tout", key="-CLEAR-")],
 
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
@@ -255,7 +274,7 @@ class FilterUI:
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
 
-            # Effacer filtre (vider uniquement la construction en cours)
+            # Effacer tout
             if ev == "-CLEAR-":
 
                 # S'assurer que la structure existe
