@@ -199,6 +199,7 @@ class FilterUI:
                 sg.Push(),  # pousse Fermer à droite
                 sg.Button("Fermer", size=(12,1))
             ]
+        ]
 
 
         # ---------------------------------------------------------
