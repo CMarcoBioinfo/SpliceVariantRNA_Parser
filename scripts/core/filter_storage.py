@@ -24,6 +24,12 @@ class FilterStorageManager:
         self.personal_dir.mkdir(parents=True, exist_ok=True)
         self.global_dir.mkdir(parents=True, exist_ok=True)
 
+        # LOGS
+        print("=== FilterStorageManager ===")
+        print("Dossier personnel :", self.personal_dir)
+        print("Dossier global :", self.global_dir)
+        print("============================")
+
     # ---------------------------------------------------------
     # DÉTECTION DOSSIER PERSONNEL
     # ---------------------------------------------------------
@@ -56,12 +62,16 @@ class FilterStorageManager:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception as e:
+            print(f"[ERROR] Impossible de lire {path} : {e}")
             return None
 
     def _save_json(self, path, data):
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"[ERROR] Impossible d'écrire {path} : {e}")
 
     # ---------------------------------------------------------
     # LISTE DES FILTRES
@@ -91,6 +101,7 @@ class FilterStorageManager:
 
             results.append(file.stem)
 
+        print(f"[LIST] scope={scope}, type={filter_type}, column={column} → {results}")
         return sorted(results)
 
     # ---------------------------------------------------------
@@ -111,6 +122,7 @@ class FilterStorageManager:
         }
 
         self._save_json(path, data)
+        print(f"[SAVE] Filtre mono-colonne enregistré : {path}")
         return True
 
     # ---------------------------------------------------------
@@ -122,8 +134,10 @@ class FilterStorageManager:
 
         data = self._load_json(path)
         if not data or data.get("type") != "column":
+            print(f"[LOAD] ERREUR : {path} n'est pas un filtre mono-colonne")
             return None
 
+        print(f"[LOAD] Filtre mono-colonne chargé : {path}")
         return data["column"], data["blocks"]
 
     # ---------------------------------------------------------
@@ -135,7 +149,10 @@ class FilterStorageManager:
 
         if path.exists():
             path.unlink()
+            print(f"[DELETE] Filtre mono-colonne supprimé : {path}")
             return True
+
+        print(f"[DELETE] Filtre introuvable : {path}")
         return False
 
     # ---------------------------------------------------------
@@ -155,6 +172,7 @@ class FilterStorageManager:
         }
 
         self._save_json(path, data)
+        print(f"[SAVE] Filtre global enregistré : {path}")
         return True
 
     # ---------------------------------------------------------
@@ -166,8 +184,10 @@ class FilterStorageManager:
 
         data = self._load_json(path)
         if not data or data.get("type") != "global":
+            print(f"[LOAD] ERREUR : {path} n'est pas un filtre global")
             return None
 
+        print(f"[LOAD] Filtre global chargé : {path}")
         return data["filters"]
 
     # ---------------------------------------------------------
@@ -179,5 +199,8 @@ class FilterStorageManager:
 
         if path.exists():
             path.unlink()
+            print(f"[DELETE] Filtre global supprimé : {path}")
             return True
+
+        print(f"[DELETE] Filtre global introuvable : {path}")
         return False
