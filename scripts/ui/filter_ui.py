@@ -163,38 +163,55 @@ class FilterUI:
         ]
 
         # ---------------------------------------------------------
-        # Création de la popup (hors écran pour mesurer)
+        # Création de la popup
         # ---------------------------------------------------------
-        popup = sg.Window(
-            f"Filtre {col_name}",
-            layout,
-            modal=True,
-            keep_on_top=True,
-            finalize=True,
-            disable_close=True,
-            location=(-10000, -10000)
-        )
 
-        # Taille réelle de la popup
-        pw, ph = popup.size
+        if saved_position:
+            # Ouvrir directement à la position sauvegardée
+            popup = sg.Window(
+                f"Filtre {col_name}",
+                layout,
+                modal=True,
+                keep_on_top=True,
+                finalize=True,
+                disable_close=True,
+                location=saved_position
+            )
+            last_position = saved_position
 
-        # Taille et position du parent
-        wx, wy = parent_window.current_location()
-        ww, wh = parent_window.size
+        else:
+            # 1) Ouvrir hors écran pour mesurer
+            popup = sg.Window(
+                f"Filtre {col_name}",
+                layout,
+                modal=True,
+                keep_on_top=True,
+                finalize=True,
+                disable_close=True,
+                location=(-10000, -10000)
+            )
 
-        # Calcul du centrage
-        px = wx + (ww - pw) // 2
-        py = wy + (wh - ph) // 2
+            # 2) Taille réelle de la popup
+            pw, ph = popup.size
 
-        # Déplacer la popup au centre
-        popup.move(px, py)
+            # 3) Taille et position du parent
+            wx, wy = parent_window.current_location()
+            ww, wh = parent_window.size
+
+            # 4) Calcul du centrage
+            px = wx + (ww - pw) // 2
+            py = wy + (wh - ph) // 2
+
+            # 5) Déplacer la popup au centre
+            popup.move(px, py)
+
+            last_position = (px, py)
 
         # Mise à jour initiale
         popup["-PREVIEW-"].update(format_preview())
         popup["-ACTIVE-"].update(format_active())
 
         changed = False
-        last_position = (px, py)
 
         selected_block = None
         selected_condition = None
@@ -204,6 +221,12 @@ class FilterUI:
         # ---------------------------------------------------------
         while True:
             ev, vals = popup.read()
+
+            # Sauvegarde position si la fenêtre est déplacée
+            try:
+                last_position = popup.current_location()
+            except:
+                pass
 
             # Fermer → ne rien appliquer
             if ev in (sg.WIN_CLOSED, "Fermer"):
@@ -325,4 +348,3 @@ class FilterUI:
 
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
-
