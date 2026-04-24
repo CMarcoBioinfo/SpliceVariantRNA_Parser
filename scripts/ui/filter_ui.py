@@ -80,7 +80,6 @@ class FilterUI:
             blocks = self.manager.get_filters(category).get(col_name, [])
             if not blocks:
                 return "Aucun filtre appliqué"
-
             return format_preview()
 
         # ---------------------------------------------------------
@@ -107,17 +106,17 @@ class FilterUI:
              sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
             [sg.Frame("Prévisualisation du filtre", [
-                [sg.Text("", key="-PREVIEW-", text_color="#00e5ff", size=(60, 3))]
+                [sg.Text("", key="-PREVIEW-", size=(60, 3))]
             ], relief=sg.RELIEF_SUNKEN)],
 
             [sg.Text("Filtre actif (appliqué) :")],
-            [sg.Text("", key="-ACTIVE-", text_color="#00e5ff")],
+            [sg.Text("", key="-ACTIVE-")],
 
             [sg.Text("Filtres détaillés :")],
             [sg.Listbox(values=format_blocks(), key="-LIST-", size=(50,12), enable_events=True)],
 
             [sg.Button("Supprimer", key="-DEL-"),
-             sg.Button("Changer logique", key="-TOGGLE-BLOCK-")],
+             sg.Button("Changer logique", key="-TOGGLE-LOGIC-")],
 
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
@@ -204,7 +203,8 @@ class FilterUI:
 
             # Ajouter un bloc
             if ev == "-ADD-BLOCK-":
-                self.manager.add_block(category, col_name)
+                logic = "AND" if vals["-COND-AND-"] else "OR"
+                self.manager.add_block(category, col_name, logic)
                 changed = True
 
                 popup["-LIST-"].update(values=format_blocks())
@@ -219,7 +219,7 @@ class FilterUI:
                 if val:
                     blocks = self.manager.get_filters(category).get(col_name, [])
                     if not blocks:
-                        self.manager.add_block(category, col_name)
+                        self.manager.add_block(category, col_name, logic)
                         blocks = self.manager.get_filters(category).get(col_name, [])
 
                     # Ajouter dans le bloc sélectionné
@@ -252,10 +252,20 @@ class FilterUI:
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
 
-            # Changer logique du bloc
-            if ev == "-TOGGLE-BLOCK-":
-                if selected_block is not None and selected_block != 0:
-                    blocks = self.manager.get_filters(category).get(col_name, [])
+            # Changer logique (bloc OU conditions)
+            if ev == "-TOGGLE-LOGIC-":
+
+                blocks = self.manager.get_filters(category).get(col_name, [])
+
+                # 1) Condition sélectionnée → changer sa logique
+                if selected_block is not None and selected_condition is not None:
+                    if selected_condition != 0:  # pas la première condition
+                        cond = blocks[selected_block]["conditions"][selected_condition]
+                        cond["logic"] = "OR" if cond["logic"] == "AND" else "AND"
+                        changed = True
+
+                # 2) Bloc sélectionné → changer logique du bloc
+                elif selected_block is not None and selected_block != 0:
                     block = blocks[selected_block]
                     block["logic"] = "OR" if block["logic"] == "AND" else "AND"
                     changed = True
