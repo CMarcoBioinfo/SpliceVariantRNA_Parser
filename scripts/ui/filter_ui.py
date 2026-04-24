@@ -43,12 +43,12 @@ class FilterUI:
             return out
 
         # ---------------------------------------------------------
-        # Formatage du filtre actif (résumé lisible)
+        # Formatage du filtre actif (prévisualisation)
         # ---------------------------------------------------------
-        def format_filter_expression():
+        def format_preview():
             blocks = self.manager.get_filters(category).get(col_name, [])
             if not blocks:
-                return "Aucun filtre actif"
+                return "Aucun filtre"
 
             parts = []
 
@@ -96,8 +96,9 @@ class FilterUI:
             [sg.Button("+ Ajouter condition", key="-ADD-COND-"),
              sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
-            [sg.Text("Filtre actif :")],
-            [sg.Text("", key="-ACTIVE-", text_color="yellow")],
+            [sg.Frame("Prévisualisation du filtre", [
+                [sg.Text("", key="-PREVIEW-", text_color="yellow", size=(60, 3))]
+            ], relief=sg.RELIEF_SUNKEN)],
 
             [sg.Text("Filtres détaillés :")],
             [sg.Listbox(values=format_blocks(), key="-LIST-", size=(50,12), enable_events=True)],
@@ -119,7 +120,7 @@ class FilterUI:
             location=popup_location
         )
 
-        popup["-ACTIVE-"].update(format_filter_expression())
+        popup["-PREVIEW-"].update(format_preview())
 
         changed = False
         last_position = popup_location
@@ -193,7 +194,7 @@ class FilterUI:
             if ev == "-ADD-BLOCK-":
                 self.manager.add_block(category, col_name)
                 popup["-LIST-"].update(values=format_blocks())
-                popup["-ACTIVE-"].update(format_filter_expression())
+                popup["-PREVIEW-"].update(format_preview())
                 changed = True
 
             # Ajouter une condition
@@ -222,7 +223,7 @@ class FilterUI:
                     changed = True
 
                 popup["-LIST-"].update(values=format_blocks())
-                popup["-ACTIVE-"].update(format_filter_expression())
+                popup["-PREVIEW-"].update(format_preview())
 
             # Supprimer une condition
             if ev == "-DEL-":
@@ -230,7 +231,7 @@ class FilterUI:
                     self.manager.remove_condition(category, col_name, selected_block, selected_condition)
                     changed = True
                     popup["-LIST-"].update(values=format_blocks())
-                    popup["-ACTIVE-"].update(format_filter_expression())
+                    popup["-PREVIEW-"].update(format_preview())
 
             # Supprimer un bloc entier
             if ev == "-DEL-BLOCK-":
@@ -239,7 +240,7 @@ class FilterUI:
                     del blocks[selected_block]
                     changed = True
                     popup["-LIST-"].update(values=format_blocks())
-                    popup["-ACTIVE-"].update(format_filter_expression())
+                    popup["-PREVIEW-"].update(format_preview())
                     selected_block = None
                     selected_condition = None
 
@@ -251,4 +252,5 @@ class FilterUI:
                     block["logic"] = "OR" if block["logic"] == "AND" else "AND"
                     changed = True
                     popup["-LIST-"].update(values=format_blocks())
-                    popup["-ACTIVE-"].update(format_filter_expression())
+                    popup["-PREVIEW-"].update(format_preview())
+
