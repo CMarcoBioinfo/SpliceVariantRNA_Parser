@@ -105,29 +105,31 @@ class FilterUI:
             [sg.Button("+ Ajouter condition", key="-ADD-COND-"),
              sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
-            # Prévisualisation
+            # Prévisualisation scrollable
             [sg.Frame("Prévisualisation du filtre", [
                 [sg.Multiline(
                     "",
                     key="-PREVIEW-",
-                    size=(80, 4),
+                    size=(80, 6),
                     disabled=True,
                     autoscroll=False,
-                    no_scrollbar=True,
-                    border_width=0
+                    no_scrollbar=False,
+                    horizontal_scroll=False,
+                    auto_size_text=False
                 )]
             ], relief=sg.RELIEF_SUNKEN)],
 
-            # Filtre actif
+            # Filtre actif scrollable
             [sg.Frame("Filtre actif (appliqué)", [
                 [sg.Multiline(
                     "",
                     key="-ACTIVE-",
-                    size=(80, 3),
+                    size=(80, 5),
                     disabled=True,
                     autoscroll=False,
-                    no_scrollbar=True,
-                    border_width=0
+                    no_scrollbar=False,
+                    horizontal_scroll=False,
+                    auto_size_text=False
                 )]
             ], relief=sg.RELIEF_SUNKEN)],
 
