@@ -113,10 +113,11 @@ class FilterUI:
             [sg.Text("", key="-ACTIVE-")],
 
             [sg.Text("Filtres détaillés :")],
-            [sg.Listbox(values=format_blocks(), key="-LIST-", size=(50,12), enable_events=True)],
+            [sg.Listbox(values=format_blocks(), key="-LIST-", size=(80,12), enable_events=True)],
 
             [sg.Button("Supprimer", key="-DEL-"),
-             sg.Button("Changer logique", key="-TOGGLE-LOGIC-")],
+             sg.Button("Changer logique", key="-TOGGLE-LOGIC-"),
+             sg.Button("Effacer filtre", key="-CLEAR-")],
 
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
@@ -251,6 +252,13 @@ class FilterUI:
 
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
+
+            # Effacer filtre (vider uniquement la construction en cours)
+            if ev == "-CLEAR-":
+                self.manager.filters[category][col_name] = []
+                popup["-LIST-"].update(values=[])
+                popup["-PREVIEW-"].update("Aucun filtre")
+                changed = True
 
             # Changer logique (bloc OU conditions)
             if ev == "-TOGGLE-LOGIC-":
