@@ -78,14 +78,18 @@ class EventsManager:
     # ---------------------------------------------------------
     # GESTION DES BLOCS
     # ---------------------------------------------------------
-    def add_block(self, category, col_name):
-        cat_filters = self.filters.setdefault(category, {})
-        col_filters = cat_filters.setdefault(col_name, [])
-
-        col_filters.append({
-            "logic": "AND",        # logique entre blocs
-            "conditions": []       # liste de conditions
+    def add_block(self, category, col_name, logic="AND"):
+        if category not in self.filters:
+            self.filters[category] = {}
+    
+        if col_name not in self.filters[category]:
+            self.filters[category][col_name] = []
+    
+        self.filters[category][col_name].append({
+            "logic": logic,
+            "conditions": []
         })
+
 
     def add_condition(self, category, col_name, block_index, op, value, logic):
         self.filters[category][col_name][block_index]["conditions"].append({
