@@ -20,7 +20,9 @@ def open_patient_window(result, saved_size=None, saved_location=None, saved_filt
 
     # --- Gestionnaire externe ---
     manager = EventsManager(events_by_cat, columns_by_cat)
-    filter_ui = FilterUI(manager)
+    
+    storage = FilterStorageManager()
+    filter_ui = FilterUI(manager, storage)
 
     # --- Construction des onglets ---
     tabs = []
