@@ -91,6 +91,7 @@ class EventsManager:
         })
 
 
+
     def add_condition(self, category, col_name, block_index, op, value, logic):
         self.filters[category][col_name][block_index]["conditions"].append({
             "op": op,
