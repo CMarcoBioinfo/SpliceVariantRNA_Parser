@@ -8,16 +8,6 @@ class FilterUI:
     def open_filter_popup(self, parent_window, category, col_name, saved_position=None):
 
         # ---------------------------------------------------------
-        # Position d’ouverture
-        # ---------------------------------------------------------
-        if saved_position:
-            popup_location = saved_position
-        else:
-            wx, wy = parent_window.current_location()
-            ww, wh = parent_window.size
-            popup_location = (wx + ww // 2, wy + wh // 2)
-
-        # ---------------------------------------------------------
         # COPIE DE TRAVAIL (working_copy)
         # ---------------------------------------------------------
         working_copy = copy.deepcopy(
@@ -89,7 +79,6 @@ class FilterUI:
             if not blocks:
                 return "Aucun filtre appliqué"
 
-            # On réutilise format_preview mais sur les blocs actifs
             parts = []
             for b_idx, block in enumerate(blocks):
                 conds = block["conditions"]
@@ -173,6 +162,9 @@ class FilterUI:
             [sg.Button("Appliquer"), sg.Button("Fermer")]
         ]
 
+        # ---------------------------------------------------------
+        # Création de la popup (hors écran pour mesurer)
+        # ---------------------------------------------------------
         popup = sg.Window(
             f"Filtre {col_name}",
             layout,
@@ -180,14 +172,29 @@ class FilterUI:
             keep_on_top=True,
             finalize=True,
             disable_close=True,
-            location=popup_location
+            location=(-10000, -10000)
         )
 
+        # Taille réelle de la popup
+        pw, ph = popup.size
+
+        # Taille et position du parent
+        wx, wy = parent_window.current_location()
+        ww, wh = parent_window.size
+
+        # Calcul du centrage
+        px = wx + (ww - pw) // 2
+        py = wy + (wh - ph) // 2
+
+        # Déplacer la popup au centre
+        popup.move(px, py)
+
+        # Mise à jour initiale
         popup["-PREVIEW-"].update(format_preview())
         popup["-ACTIVE-"].update(format_active())
 
         changed = False
-        last_position = popup_location
+        last_position = (px, py)
 
         selected_block = None
         selected_condition = None
@@ -198,13 +205,6 @@ class FilterUI:
         while True:
             ev, vals = popup.read()
 
-            # Sauvegarde position
-            if popup.TKroot:
-                try:
-                    last_position = popup.current_location()
-                except:
-                    pass
-
             # Fermer → ne rien appliquer
             if ev in (sg.WIN_CLOSED, "Fermer"):
                 popup.close()
@@ -213,7 +213,6 @@ class FilterUI:
             # Appliquer → on copie working_copy dans manager
             if ev == "Appliquer":
 
-                # Nettoyage automatique des blocs vides
                 cleaned = [b for b in working_copy if len(b["conditions"]) > 0]
 
                 if cleaned:
@@ -221,7 +220,6 @@ class FilterUI:
                         self.manager.filters[category] = {}
                     self.manager.filters[category][col_name] = cleaned
                 else:
-                    # Aucun filtre → suppression
                     if col_name in self.manager.filters.get(category, {}):
                         del self.manager.filters[category][col_name]
 
@@ -327,3 +325,4 @@ class FilterUI:
 
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
+
