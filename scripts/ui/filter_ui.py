@@ -97,12 +97,13 @@ class FilterUI:
              sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
             [sg.Text("Filtre actif :")],
-            [sg.Text("", key="-ACTIVE-")],
+            [sg.Text("", key="-ACTIVE-", text_color="yellow")],
 
             [sg.Text("Filtres détaillés :")],
             [sg.Listbox(values=format_blocks(), key="-LIST-", size=(50,12), enable_events=True)],
 
-            [sg.Button("Supprimer", key="-DEL-"),
+            [sg.Button("Supprimer condition", key="-DEL-"),
+             sg.Button("Supprimer bloc", key="-DEL-BLOCK-"),
              sg.Button("Changer logique du bloc", key="-TOGGLE-BLOCK-")],
 
             [sg.Button("Appliquer"), sg.Button("Fermer")]
@@ -146,6 +147,18 @@ class FilterUI:
 
             # Appliquer
             if ev == "Appliquer":
+
+                # Nettoyage automatique des blocs vides
+                blocks = self.manager.get_filters(category).get(col_name, [])
+                cleaned = [b for b in blocks if len(b["conditions"]) > 0]
+
+                if cleaned:
+                    self.manager.filters[category][col_name] = cleaned
+                else:
+                    # Plus aucun bloc → supprimer complètement la colonne
+                    if col_name in self.manager.filters.get(category, {}):
+                        del self.manager.filters[category][col_name]
+
                 popup.close()
                 return changed, last_position
 
@@ -219,6 +232,17 @@ class FilterUI:
                     popup["-LIST-"].update(values=format_blocks())
                     popup["-ACTIVE-"].update(format_filter_expression())
 
+            # Supprimer un bloc entier
+            if ev == "-DEL-BLOCK-":
+                if selected_block is not None:
+                    blocks = self.manager.get_filters(category).get(col_name, [])
+                    del blocks[selected_block]
+                    changed = True
+                    popup["-LIST-"].update(values=format_blocks())
+                    popup["-ACTIVE-"].update(format_filter_expression())
+                    selected_block = None
+                    selected_condition = None
+
             # Changer logique du bloc
             if ev == "-TOGGLE-BLOCK-":
                 if selected_block is not None and selected_block != 0:
@@ -228,4 +252,3 @@ class FilterUI:
                     changed = True
                     popup["-LIST-"].update(values=format_blocks())
                     popup["-ACTIVE-"].update(format_filter_expression())
-
