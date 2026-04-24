@@ -97,7 +97,7 @@ class FilterUI:
              sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
             [sg.Text("Filtre actif :")],
-            [sg.Text("", key="-ACTIVE-", text_color="yellow")],
+            [sg.Text("", key="-ACTIVE-")],
 
             [sg.Text("Filtres détaillés :")],
             [sg.Listbox(values=format_blocks(), key="-LIST-", size=(50,12), enable_events=True)],
