@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 from scripts.core.qc_manager import open_qc_html
 from scripts.core.sashimi_manager import open_sashimi_plot
 from scripts.core.events_manager import EventsManager
+from scripts.core.filter_storage import FilterStorageManager
 from scripts.ui.filter_ui import FilterUI
 
 
