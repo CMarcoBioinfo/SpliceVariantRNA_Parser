@@ -219,6 +219,8 @@ class FilterUI:
 
                 if val:
                     blocks = self.manager.get_filters(category).get(col_name, [])
+
+                    # Si aucun bloc → en créer un automatiquement
                     if not blocks:
                         self.manager.add_block(category, col_name, logic)
                         blocks = self.manager.get_filters(category).get(col_name, [])
@@ -255,9 +257,16 @@ class FilterUI:
 
             # Effacer filtre (vider uniquement la construction en cours)
             if ev == "-CLEAR-":
+
+                # S'assurer que la structure existe
+                if category not in self.manager.filters:
+                    self.manager.filters[category] = {}
+
                 self.manager.filters[category][col_name] = []
+
                 popup["-LIST-"].update(values=[])
                 popup["-PREVIEW-"].update("Aucun filtre")
+
                 changed = True
 
             # Changer logique (bloc OU conditions)
