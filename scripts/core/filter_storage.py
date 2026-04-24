@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 from pathlib import Path
 import platform
 
@@ -14,11 +15,16 @@ class FilterStorageManager:
     def __init__(self, app_name="SpliceVariantRNA_Parser"):
         self.app_name = app_name
 
-        # Dossiers personnels (APPDATA ou ~/.config)
+        # ---------------------------------------------------------
+        # Dossier personnel (APPDATA)
+        # ---------------------------------------------------------
         self.personal_dir = self._get_personal_dir()
 
-        # Dossiers globaux (dans le dossier de l'exécutable)
-        self.global_dir = Path(__file__).resolve().parent / f"filters_global_{app_name}"
+        # ---------------------------------------------------------
+        # Dossier global = dossier du .EXE (PyInstaller)
+        # ---------------------------------------------------------
+        exe_dir = Path(sys.executable).resolve().parent
+        self.global_dir = exe_dir / f"filters_global_{app_name}"
 
         # Création des dossiers
         self.personal_dir.mkdir(parents=True, exist_ok=True)
@@ -34,22 +40,14 @@ class FilterStorageManager:
     # DÉTECTION DOSSIER PERSONNEL
     # ---------------------------------------------------------
     def _get_personal_dir(self):
-        system = platform.system()
-
-        if system == "Windows":
-            base = Path(os.getenv("APPDATA")) / self.app_name
-        else:
-            base = Path.home() / ".config" / self.app_name
-
+        base = Path(os.getenv("APPDATA")) / self.app_name
         return base / ".filters_personal"
 
     # ---------------------------------------------------------
     # OUTILS GÉNÉRIQUES
     # ---------------------------------------------------------
     def _get_scope_dir(self, scope):
-        if scope == "personal":
-            return self.personal_dir
-        return self.global_dir
+        return self.personal_dir if scope == "personal" else self.global_dir
 
     def _sanitize_filename(self, name):
         """Supprime caractères interdits."""
@@ -77,11 +75,6 @@ class FilterStorageManager:
     # LISTE DES FILTRES
     # ---------------------------------------------------------
     def list_filters(self, scope, filter_type=None, column=None):
-        """
-        Retourne la liste des fichiers JSON dans le scope.
-        filter_type = "column" ou "global" ou None
-        column = nom de colonne (pour filtrer les mono-colonnes)
-        """
         folder = self._get_scope_dir(scope)
         results = []
 
@@ -108,9 +101,6 @@ class FilterStorageManager:
     # SAUVEGARDE FILTRE MONO-COLONNE
     # ---------------------------------------------------------
     def save_column_filter(self, column, name, blocks, scope):
-        """
-        Enregistre un filtre mono-colonne dans un fichier JSON.
-        """
         folder = self._get_scope_dir(scope)
         name = self._sanitize_filename(name)
         path = folder / f"{name}.json"
@@ -159,9 +149,6 @@ class FilterStorageManager:
     # SAUVEGARDE FILTRE GLOBAL
     # ---------------------------------------------------------
     def save_global_filter(self, name, filters_dict, scope):
-        """
-        filters_dict = {col_name: blocks}
-        """
         folder = self._get_scope_dir(scope)
         name = self._sanitize_filename(name)
         path = folder / f"{name}.json"
@@ -196,6 +183,14 @@ class FilterStorageManager:
     def delete_global_filter(self, name, scope):
         folder = self._get_scope_dir(scope)
         path = folder / f"{name}.json"
+
+        if path.exists():
+            path.unlink()
+            print(f"[DELETE] Filtre global supprimé : {path}")
+            return True
+
+        print(f"[DELETE] Filtre global introuvable : {path}")
+        return False
 
         if path.exists():
             path.unlink()
