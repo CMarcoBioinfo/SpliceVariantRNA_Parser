@@ -24,13 +24,11 @@ class FilterUI:
 
             for b_idx, block in enumerate(blocks):
 
-                # Premier bloc → pas de logique
                 if b_idx == 0:
                     out.append(f"[Bloc {b_idx+1}]")
                 else:
                     out.append(f"[Bloc {b_idx+1} - {block['logic']}]")
 
-                # Conditions
                 for c_idx, cond in enumerate(block["conditions"]):
                     if c_idx == 0:
                         out.append(f'   • {cond["op"]} "{cond["value"]}"')
@@ -42,7 +40,7 @@ class FilterUI:
             return out
 
         # ---------------------------------------------------------
-        # Prévisualisation dynamique (basée sur working_copy)
+        # Prévisualisation dynamique
         # ---------------------------------------------------------
         def format_preview():
             blocks = working_copy
@@ -73,7 +71,7 @@ class FilterUI:
             return " ".join(parts)
 
         # ---------------------------------------------------------
-        # Filtre actif (basé sur manager, pas working_copy)
+        # Filtre actif
         # ---------------------------------------------------------
         def format_active():
             blocks = self.manager.get_filters(category).get(col_name, [])
@@ -103,7 +101,7 @@ class FilterUI:
             return " ".join(parts)
 
         # ---------------------------------------------------------
-        # Layout principal
+        # Layout principal (inchangé)
         # ---------------------------------------------------------
         layout = [
             [sg.Text(f"Filtres pour {col_name}", font=("Arial", 12, "bold"))],
@@ -125,40 +123,18 @@ class FilterUI:
             [sg.Button("+ Ajouter condition", key="-ADD-COND-"),
              sg.Button("+ Ajouter bloc", key="-ADD-BLOCK-")],
 
-            # Prévisualisation scrollable
             [sg.Frame("Prévisualisation du filtre", [
-                [sg.Multiline(
-                    "",
-                    key="-PREVIEW-",
-                    size=(80, 6),
-                    disabled=True,
-                    autoscroll=False,
-                    no_scrollbar=False,
-                    horizontal_scroll=False,
-                    auto_size_text=False
-                )]
+                [sg.Multiline("", key="-PREVIEW-", size=(80, 6), disabled=True)]
             ], relief=sg.RELIEF_SUNKEN)],
 
-            # Filtre actif scrollable
             [sg.Frame("Filtre actif (appliqué)", [
-                [sg.Multiline(
-                    "",
-                    key="-ACTIVE-",
-                    size=(80, 5),
-                    disabled=True,
-                    autoscroll=False,
-                    no_scrollbar=False,
-                    horizontal_scroll=False,
-                    auto_size_text=False
-                )]
+                [sg.Multiline("", key="-ACTIVE-", size=(80, 5), disabled=True)]
             ], relief=sg.RELIEF_SUNKEN)],
 
             [sg.Text("Filtres détaillés :")],
             [sg.Listbox(values=format_blocks(), key="-LIST-", size=(80,12), enable_events=True)],
 
-            # ---------------------------------------------------------
-            # Cadre : Actions du filtre
-            # ---------------------------------------------------------
+            # Actions du filtre
             [
                 sg.Frame(
                     "Actions du filtre",
@@ -173,85 +149,58 @@ class FilterUI:
                     pad=((0,0),(10,10))
                 )
             ],
-            
-            # ---------------------------------------------------------
-            # Cadre : Gestion des filtres
-            # ---------------------------------------------------------
+
+            # Gestion des filtres (inchangé sauf ajout bouton supprimer)
             [
                 sg.Frame(
                     "Gestion des filtres",
                     [
                         [
                             sg.Button("Enregistrer", key="-SAVE-FILTER-", size=(12,1)),
-                            sg.Button("Charger", key="-LOAD-FILTER-", size=(12,1))
+                            sg.Button("Charger", key="-LOAD-FILTER-", size=(12,1)),
+                            sg.Button("Supprimer filtre", key="-DELETE-FILTER-", size=(15,1))
                         ]
                     ],
                     relief=sg.RELIEF_GROOVE,
                     pad=((0,0),(10,10))
                 )
             ],
-            
-            # ---------------------------------------------------------
-            # Boutons finaux
-            # ---------------------------------------------------------
+
             [
                 sg.Button("Appliquer", size=(12,1)),
-                sg.Push(),  # pousse Fermer à droite
+                sg.Push(),
                 sg.Button("Fermer", size=(12,1))
             ]
         ]
 
-
         # ---------------------------------------------------------
-        # Création de la popup
+        # Création popup centré (version fiable)
         # ---------------------------------------------------------
+        popup = sg.Window(
+            f"Filtre {col_name}",
+            layout,
+            modal=True,
+            keep_on_top=True,
+            finalize=True,
+            disable_close=True,
+            location=(-10000, -10000)
+        )
 
-        if saved_position:
-            # Ouvrir directement à la position sauvegardée
-            popup = sg.Window(
-                f"Filtre {col_name}",
-                layout,
-                modal=True,
-                keep_on_top=True,
-                finalize=True,
-                disable_close=True,
-                location=saved_position
-            )
-            last_position = saved_position
+        popup.TKroot.update_idletasks()
+        pw = popup.TKroot.winfo_width()
+        ph = popup.TKroot.winfo_height()
 
-        else:
-            # 1) Ouvrir hors écran pour mesurer
-            popup = sg.Window(
-                f"Filtre {col_name}",
-                layout,
-                modal=True,
-                keep_on_top=True,
-                finalize=True,
-                disable_close=True,
-                location=(-10000, -10000)
-            )
+        wx, wy = parent_window.current_location()
+        ww, wh = parent_window.size
 
-            # 2) Taille réelle de la popup
-            pw, ph = popup.size
+        px = wx + (ww - pw) // 2
+        py = wy + (wh - ph) // 2
 
-            # 3) Taille et position du parent
-            wx, wy = parent_window.current_location()
-            ww, wh = parent_window.size
+        popup.move(px, py)
+        last_position = (px, py)
 
-            # 4) Calcul du centrage
-            px = wx + (ww - pw) // 2
-            py = wy + (wh - ph) // 2
-
-            # 5) Déplacer la popup au centre
-            popup.move(px, py)
-
-            last_position = (px, py)
-
-        # Mise à jour initiale
         popup["-PREVIEW-"].update(format_preview())
         popup["-ACTIVE-"].update(format_active())
-
-        changed = False
 
         selected_block = None
         selected_condition = None
@@ -262,20 +211,16 @@ class FilterUI:
         while True:
             ev, vals = popup.read()
 
-            # Sauvegarde position si la fenêtre est déplacée
             try:
                 last_position = popup.current_location()
             except:
                 pass
 
-            # Fermer → ne rien appliquer
             if ev in (sg.WIN_CLOSED, "Fermer"):
                 popup.close()
                 return False, last_position
 
-            # Appliquer → on copie working_copy dans manager
             if ev == "Appliquer":
-
                 cleaned = [b for b in working_copy if len(b["conditions"]) > 0]
 
                 if cleaned:
@@ -289,7 +234,9 @@ class FilterUI:
                 popup.close()
                 return True, last_position
 
-            # Sélection dans la Listbox
+            # ---------------------------------------------------------
+            # Sélection listbox
+            # ---------------------------------------------------------
             if ev == "-LIST-":
                 selected = vals["-LIST-"]
                 selected_block = None
@@ -313,16 +260,19 @@ class FilterUI:
                                     selected_condition = c_idx
                                     break
 
-            # Ajouter un bloc
+            # ---------------------------------------------------------
+            # Ajouter bloc
+            # ---------------------------------------------------------
             if ev == "-ADD-BLOCK-":
                 logic = "AND" if vals["-COND-AND-"] else "OR"
                 working_copy.append({"logic": logic, "conditions": []})
-                changed = True
 
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
 
-            # Ajouter une condition
+            # ---------------------------------------------------------
+            # Ajouter condition
+            # ---------------------------------------------------------
             if ev == "-ADD-COND-":
                 op = vals["-OP-"]
                 val = vals["-VAL-"]
@@ -347,44 +297,43 @@ class FilterUI:
                         "logic": logic
                     })
 
-                    changed = True
-
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
 
-            # Supprimer
+            # ---------------------------------------------------------
+            # Supprimer condition ou bloc
+            # ---------------------------------------------------------
             if ev == "-DEL-":
                 if selected_block is not None and selected_condition is not None:
                     del working_copy[selected_block]["conditions"][selected_condition]
-                    changed = True
 
                 elif selected_block is not None:
                     del working_copy[selected_block]
-                    changed = True
 
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
 
+            # ---------------------------------------------------------
             # Effacer tout
+            # ---------------------------------------------------------
             if ev == "-CLEAR-":
                 working_copy = []
                 popup["-LIST-"].update(values=[])
                 popup["-PREVIEW-"].update("Aucun filtre")
-                changed = True
 
+            # ---------------------------------------------------------
             # Changer logique
+            # ---------------------------------------------------------
             if ev == "-TOGGLE-LOGIC-":
 
                 if selected_block is not None and selected_condition is not None:
                     if selected_condition != 0:
                         cond = working_copy[selected_block]["conditions"][selected_condition]
                         cond["logic"] = "OR" if cond["logic"] == "AND" else "AND"
-                        changed = True
 
                 elif selected_block is not None and selected_block != 0:
                     block = working_copy[selected_block]
                     block["logic"] = "OR" if block["logic"] == "AND" else "AND"
-                    changed = True
 
                 popup["-LIST-"].update(values=format_blocks())
                 popup["-PREVIEW-"].update(format_preview())
@@ -393,56 +342,54 @@ class FilterUI:
             # ENREGISTRER FILTRE
             # ---------------------------------------------------------
             if ev == "-SAVE-FILTER-":
-            
+
                 layout_save = [
                     [sg.Text("Nom du filtre :")],
                     [sg.Input(key="-SAVE-NAME-")],
-            
+
                     [sg.Text("Scope :")],
                     [
                         sg.Radio("Personnel", "SCOPE_SAVE", key="-SAVE-PERSO-", default=True),
                         sg.Radio("Global", "SCOPE_SAVE", key="-SAVE-GLOBAL-")
                     ],
-            
+
                     [sg.Push(), sg.Button("OK"), sg.Button("Annuler")]
                 ]
-            
+
                 win = sg.Window("Enregistrer filtre", layout_save, modal=True, keep_on_top=True)
-            
+
                 while True:
                     ev2, vals2 = win.read()
                     if ev2 in (sg.WIN_CLOSED, "Annuler"):
                         win.close()
                         break
-            
+
                     if ev2 == "OK":
                         name = vals2["-SAVE-NAME-"]
                         if not name:
                             sg.popup_ok("Nom invalide.")
                             continue
-            
+
                         scope = "personal" if vals2["-SAVE-PERSO-"] else "global"
-            
+
                         cleaned = [b for b in working_copy if len(b["conditions"]) > 0]
-            
+
                         self.storage.save_column_filter(
                             column=col_name,
                             name=name,
                             blocks=cleaned,
                             scope=scope
                         )
-            
+
                         win.close()
                         sg.popup_ok("Filtre enregistré.")
                         break
-
 
             # ---------------------------------------------------------
             # CHARGER FILTRE
             # ---------------------------------------------------------
             if ev == "-LOAD-FILTER-":
-            
-                # Popup pour choisir scope
+
                 layout_scope = [
                     [sg.Text("Charger un filtre :")],
                     [
@@ -451,61 +398,119 @@ class FilterUI:
                     ],
                     [sg.Button("Suivant"), sg.Button("Annuler")]
                 ]
-            
+
                 win1 = sg.Window("Choisir scope", layout_scope, modal=True, keep_on_top=True)
                 ev2, vals2 = win1.read()
                 if ev2 in (sg.WIN_CLOSED, "Annuler"):
                     win1.close()
                     continue
-            
+
                 scope = "personal" if vals2["-LOAD-PERSO-"] else "global"
                 win1.close()
-            
-                # Liste des filtres disponibles
+
                 names = self.storage.list_filters(
                     scope=scope,
                     filter_type="column",
                     column=col_name
                 )
-            
+
                 if not names:
                     sg.popup_ok("Aucun filtre trouvé.")
                     continue
-            
-                # Popup liste déroulante
+
                 layout_load = [
                     [sg.Text("Sélectionner un filtre :")],
                     [sg.Combo(names, key="-LOAD-NAME-", readonly=True, size=(25,1))],
                     [sg.Push(), sg.Button("Charger"), sg.Button("Annuler")]
                 ]
-            
+
                 win2 = sg.Window("Charger filtre", layout_load, modal=True, keep_on_top=True)
-            
+
                 while True:
                     ev3, vals3 = win2.read()
                     if ev3 in (sg.WIN_CLOSED, "Annuler"):
                         win2.close()
                         break
-            
+
                     if ev3 == "Charger":
                         name = vals3["-LOAD-NAME-"]
                         if not name:
                             sg.popup_ok("Aucun filtre sélectionné.")
                             continue
-            
+
                         loaded = self.storage.load_column_filter(name, scope)
                         if not loaded:
                             sg.popup_ok("Erreur : filtre introuvable.")
                             continue
-            
+
                         _, blocks = loaded
                         working_copy = copy.deepcopy(blocks)
-            
+
                         popup["-LIST-"].update(values=format_blocks())
                         popup["-PREVIEW-"].update(format_preview())
-            
+
                         win2.close()
                         break
 
+            # ---------------------------------------------------------
+            # SUPPRIMER FILTRE
+            # ---------------------------------------------------------
+            if ev == "-DELETE-FILTER-":
 
+                layout_scope = [
+                    [sg.Text("Supprimer un filtre :")],
+                    [
+                        sg.Radio("Personnel", "SCOPE_DEL", key="-DEL-PERSO-", default=True),
+                        sg.Radio("Global", "SCOPE_DEL", key="-DEL-GLOBAL-")
+                    ],
+                    [sg.Button("Suivant"), sg.Button("Annuler")]
+                ]
 
+                win1 = sg.Window("Choisir scope", layout_scope, modal=True, keep_on_top=True)
+                ev2, vals2 = win1.read()
+                if ev2 in (sg.WIN_CLOSED, "Annuler"):
+                    win1.close()
+                    continue
+
+                scope = "personal" if vals2["-DEL-PERSO-"] else "global"
+                win1.close()
+
+                names = self.storage.list_filters(
+                    scope=scope,
+                    filter_type="column",
+                    column=col_name
+                )
+
+                if not names:
+                    sg.popup_ok("Aucun filtre à supprimer.")
+                    continue
+
+                layout_del = [
+                    [sg.Text("Sélectionner un filtre à supprimer :")],
+                    [sg.Combo(names, key="-DEL-NAME-", readonly=True, size=(25,1))],
+                    [sg.Push(), sg.Button("Supprimer"), sg.Button("Annuler")]
+                ]
+
+                win2 = sg.Window("Supprimer filtre", layout_del, modal=True, keep_on_top=True)
+
+                while True:
+                    ev3, vals3 = win2.read()
+                    if ev3 in (sg.WIN_CLOSED, "Annuler"):
+                        win2.close()
+                        break
+
+                    if ev3 == "Supprimer":
+                        name = vals3["-DEL-NAME-"]
+                        if not name:
+                            sg.popup_ok("Aucun filtre sélectionné.")
+                            continue
+
+                        ok = self.storage.delete_column_filter(name, scope)
+
+                        if ok:
+                            sg.popup_ok("Filtre supprimé.")
+                        else:
+                            sg.popup_ok("Erreur : impossible de supprimer.")
+
+                        win2.close()
+                        break
