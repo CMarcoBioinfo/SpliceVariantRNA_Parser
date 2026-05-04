@@ -142,15 +142,16 @@ def row_to_event(row, sample_file):
         "p-value_fmt": pvalue_fmt,
 
         "Distribution": row.get("DistribAjust"),
-        "Significative": row.get("filterInterpretation") or row.get("Significative"),
+        "Interpretation": row.get("filterInterpretation"),
         "nbSignificantSamples": int(row.get("nbSignificantSamples") or 0),
-        "SampleReads": row.get("SampleReads"),
         "nbFilteredSamples": int(row.get("nbSampFilter") or 0),
-
+        "SampleReads": (row.get("Significative") or row.get("SampleReads")),
+        
+        "AnnotationJunction":row.get("AnnotJuncs"),
         "cStart": row.get("cStart"),
         "cEnd": row.get("cEnd"),
         "HGVS": row.get("HGVS"),
-
+        
         "Source": row.get("Source"),
 
         "Plots_links": {},
