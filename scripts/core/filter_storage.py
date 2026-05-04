@@ -23,7 +23,7 @@ class FilterStorageManager:
         # Dossier global = dossier du .EXE (PyInstaller)
         # ---------------------------------------------------------
         exe_dir = Path(sys.executable).resolve().parent
-        self.global_dir = exe_dir / f"filters_global_{app_name}"
+        self.global_dir = exe_dir / f".filters_global_{app_name}"
 
         # Création des dossiers
         self.personal_dir.mkdir(parents=True, exist_ok=True)
