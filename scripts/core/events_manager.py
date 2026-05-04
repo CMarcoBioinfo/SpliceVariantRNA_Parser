@@ -30,25 +30,35 @@ class EventsManager:
     # ---------------------------------------------------------
     # DETAILS
     # ---------------------------------------------------------
-    def extract_details(self, category, idx):
-        ev_list = self.apply_filters(category)
-        if idx == 0:
-            return ""
+def extract_details(self, category, idx):
+    ev_list = self.apply_filters(category)
+    if idx == 0:
+        return ""
 
-        real_idx = idx - 1
-        if real_idx < 0 or real_idx >= len(ev_list):
-            return ""
+    real_idx = idx - 1
+    if real_idx < 0 or real_idx >= len(ev_list):
+        return ""
 
-        ev = ev_list[real_idx]
+    ev = ev_list[real_idx]
 
-        detail_keys = [
-            "Gene", "Event", "Position", "Depth", "PSI-like",
-            "Distribution", "p-value", "Significative",
-            "nbSignificantSamples", "nbFilteredSamples",
-            "cStart", "cEnd", "HGVS", "Source"
-        ]
+    detail_keys = [
+        "Gene", "Event", "Position", "Depth", "PSI-like",
+        "Distribution", "p-value", "Interpretation",
+        "nbSignificantSamples", "nbFilteredSamples",
+        "SampleReads", "AnnotationJunction"
+        "cStart", "cEnd", "HGVS", "Source"
+    ]
 
-        return "\n".join(f"{k}: {ev[k]}" for k in detail_keys if k in ev)
+    lines = []
+    for k in detail_keys:
+        if k in ev:
+            v = ev[k]
+            # On ignore None, "", "null", 0, []
+            if v not in (None, "", "null"):
+                lines.append(f"{k}: {v}")
+
+    return "\n".join(lines)
+
 
     # ---------------------------------------------------------
     # TRI
