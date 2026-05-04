@@ -134,12 +134,12 @@ def row_to_event(row, sample_file):
 
         # backend
         "Depth": int(row.get(reads_col) or 0),
-        "PSI-like": psi_value,
-        "p-value": pvalue_raw,
+        "PSI-like_raw": psi_value,
+        "p-value_raw": pvalue_raw,
 
         # frontend
-        "PSI-like_fmt": psi_fmt,
-        "p-value_fmt": pvalue_fmt,
+        "PSI-like": psi_fmt,
+        "p-value": pvalue_fmt,
 
         "Distribution": row.get("DistribAjust"),
         "Interpretation": row.get("filterInterpretation"),
